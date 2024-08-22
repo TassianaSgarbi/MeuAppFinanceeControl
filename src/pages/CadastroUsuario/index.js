@@ -1,6 +1,6 @@
-// src/pages/CadastroUsuario.js
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { TextInputMask } from 'react-native-masked-text';
 
 export default function CadastroUsuario() {
   const [name, setName] = useState('');
@@ -29,17 +29,22 @@ export default function CadastroUsuario() {
             onChangeText={setName}
             placeholderTextColor="#888"
           />
-          <TextInput
+          <TextInputMask
             style={styles.input}
             placeholder="CPF"
+            type={'cpf'}
             value={cpf}
             onChangeText={setCpf}
             placeholderTextColor="#888"
             keyboardType="numeric"
           />
-          <TextInput
+          <TextInputMask
             style={styles.input}
             placeholder="Data de Nascimento"
+            type={'datetime'}
+            options={{
+              format: 'DD/MM/YYYY',
+            }}
             value={dob}
             onChangeText={setDob}
             placeholderTextColor="#888"

@@ -12,15 +12,17 @@ const App = () => {
           colors={['rgba(73,96,249,1)', 'rgba(25,55,254,1)']}
           style={styles.headerGradient}
         >
-          <Text style={styles.welcomeText}>Bem Vindo ao Financee Control</Text>
         </LinearGradient>
 
         <AppNavigator />
 
         <LinearGradient
           colors={['rgba(25,55,254,1)', 'rgba(73,96,249,1)']}
-          style={styles.footerGradient}
-        />
+          style={styles.footerGradient} >
+        <Text style={styles.welcomeText}>Financee Control</Text>
+        <Text style={styles.welcomeText}>Sistema Controle Financeiro</Text>
+          </LinearGradient>
+        
       </View>
     </NavigationContainer>
   );
@@ -34,7 +36,7 @@ const styles = StyleSheet.create({
   },
   headerGradient: {
     width: '100%',
-    height: '30%',
+    height: '25%',
     padding: 20,
     borderBottomLeftRadius: 85,
     borderBottomRightRadius: 85,
@@ -43,7 +45,7 @@ const styles = StyleSheet.create({
   },
   footerGradient: {
     width: '100%',
-    height: '10%',
+    height: '15%',
     padding: 20,
     borderTopLeftRadius: 85,
     borderTopRightRadius: 85,
