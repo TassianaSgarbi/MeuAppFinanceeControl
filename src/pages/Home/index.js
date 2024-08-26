@@ -79,7 +79,6 @@ export default function Home() {
         <TouchableOpacity onPress={openMenu}>
           <Feather name="menu" size={24} color="#fff" style={styles.menuIcon} />
         </TouchableOpacity>
-        <Feather name="settings" size={24} color="#fff" style={styles.menuIcon} />
       </View>
 
       <Modal visible={menuVisible} transparent animationType="none">
@@ -103,6 +102,26 @@ export default function Home() {
               }}
             >
               <Text style={styles.menuItemText}>Consultar Despesas</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                closeMenu();
+                navigation.navigate('AlterarDados'); // Navega para Alterar Dados
+              }}
+            >
+              <Text style={styles.menuItemText}>Alterar Dados</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                closeMenu();
+                navigation.navigate('Login'); // Navega para a tela de login (sair do sistema)
+              }}
+            >
+              <Text style={styles.menuItemText}>Sair do Sistema</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

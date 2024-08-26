@@ -1,24 +1,28 @@
-// src/pages/ConsultarDespesas/index.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, FlatList, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 
 export default function ConsultarDespesas() {
-  const [dataVencimento, setDataVencimento] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [despesas, setDespesas] = useState([]);
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState({ start: false, end: false });
 
   useEffect(() => {
-    if (dataVencimento) {
+    if (startDate && endDate) {
       fetchDespesas();
     }
-  }, [dataVencimento]);
+  }, [startDate, endDate]);
 
   const fetchDespesas = async () => {
     try {
-      // Substitua a URL pelo seu endpoint real
-      const response = await axios.get(`https://seu-backend.com/despesas?dataVencimento=${dataVencimento}`);
+      const response = await axios.get(`https://seu-backend.com/despesas`, {
+        params: {
+          startDate,
+          endDate
+        }
+      });
       setDespesas(response.data);
     } catch (error) {
       console.error('Erro ao buscar despesas:', error);
@@ -26,32 +30,31 @@ export default function ConsultarDespesas() {
   };
 
   const handleConsultar = () => {
-    if (dataVencimento) {
-      fetchDespesas();
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const sixMonthsLater = new Date(start);
+      sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
+
+      if (end > sixMonthsLater) {
+        alert('O intervalo de consulta não pode exceder 6 meses.');
+      } else {
+        fetchDespesas();
+      }
     } else {
-      alert('Por favor, selecione uma data de vencimento.');
+      alert('Por favor, selecione as datas de início e término.');
     }
   };
 
-  const handleEditar = (id) => {
-    // Navegue para a tela de edição com o ID da despesa
-    console.log('Editar despesa com ID:', id);
-  };
-
-  const handleExcluir = async (id) => {
-    try {
-      // Substitua a URL pelo seu endpoint real
-      await axios.delete(`https://seu-backend.com/despesas/${id}`);
-      setDespesas(despesas.filter(despesa => despesa.id !== id));
-    } catch (error) {
-      console.error('Erro ao excluir despesa:', error);
-    }
-  };
-
-  const onDateChange = (event, selectedDate) => {
+  const onDateChange = (event, selectedDate, dateType) => {
     const currentDate = selectedDate || new Date();
-    setShowDatePicker(Platform.OS === 'ios');
-    setDataVencimento(currentDate.toISOString().split('T')[0]); // Formata a data no formato YYYY-MM-DD
+    setShowDatePicker({ ...showDatePicker, [dateType]: Platform.OS === 'ios' });
+    
+    if (dateType === 'start') {
+      setStartDate(currentDate.toISOString().split('T')[0]);
+    } else {
+      setEndDate(currentDate.toISOString().split('T')[0]);
+    }
   };
 
   return (
@@ -60,16 +63,29 @@ export default function ConsultarDespesas() {
         <Text style={styles.subtitle}>Consulte suas Despesas Cadastradas</Text>
 
         <View style={styles.inputContainer}>
-          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.input}>
-            <Text style={styles.inputText}>{dataVencimento || 'Digite a Data de Vencimento'}</Text>
+          <TouchableOpacity onPress={() => setShowDatePicker({ ...showDatePicker, start: true })} style={styles.input}>
+            <Text style={styles.inputText}>{startDate || 'Digite a Data de Início'}</Text>
           </TouchableOpacity>
-          {showDatePicker && (
+          {showDatePicker.start && (
             <DateTimePicker
-              testID="dateTimePicker"
+              testID="dateTimePickerStart"
               value={new Date()}
               mode="date"
               display="default"
-              onChange={onDateChange}
+              onChange={(event, selectedDate) => onDateChange(event, selectedDate, 'start')}
+            />
+          )}
+
+          <TouchableOpacity onPress={() => setShowDatePicker({ ...showDatePicker, end: true })} style={styles.input}>
+            <Text style={styles.inputText}>{endDate || 'Digite a Data de Término'}</Text>
+          </TouchableOpacity>
+          {showDatePicker.end && (
+            <DateTimePicker
+              testID="dateTimePickerEnd"
+              value={new Date()}
+              mode="date"
+              display="default"
+              onChange={(event, selectedDate) => onDateChange(event, selectedDate, 'end')}
             />
           )}
         </View>
@@ -136,6 +152,7 @@ const styles = StyleSheet.create({
     color: '#333',
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 10,
   },
   inputText: {
     color: '#333',

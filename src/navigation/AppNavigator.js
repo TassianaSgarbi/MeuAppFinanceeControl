@@ -5,6 +5,8 @@ import Login from '../pages/Login';
 import CadastroUsuario from '../pages/CadastroUsuario';
 import CadastroDespesas from '../pages/CadastroDespesas';
 import ConsultarDespesas from '../pages/ConsultarDespesas';
+import AlterarDados from '../pages/AlterarDados';
+
 
 const Stack = createStackNavigator();
 
@@ -24,6 +26,7 @@ const AppNavigator = () => {
       <Stack.Screen name="Home" component={Home} />
       <Stack.Screen name="CadastroDespesas" component={CadastroDespesas} />
       <Stack.Screen name="ConsultarDespesas" component={ConsultarDespesas} />
+      <Stack.Screen name="AlterarDados" component={AlterarDados} />
     </Stack.Navigator>
   );
 };
