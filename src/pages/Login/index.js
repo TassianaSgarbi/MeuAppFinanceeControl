@@ -59,4 +59,4 @@ const styles = StyleSheet.create({
     color: 'blue',
     textAlign: 'center',
   },
-});
+ });

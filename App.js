@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -9,20 +9,24 @@ const App = () => {
     <NavigationContainer>
       <View style={styles.container}>
         <LinearGradient
-          colors={['rgba(73,96,249,1)', 'rgba(25,55,254,1)']}
+          colors={['#FFFFFF', '#FFFFFF']}
           style={styles.headerGradient}
         >
+          {/* Adicionando o logo no headerGradient */}
+          <Image 
+            source={require('./assets/logo2.png')} // Caminho para o logo
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </LinearGradient>
 
         <AppNavigator />
 
-        <LinearGradient
-          colors={['rgba(25,55,254,1)', 'rgba(73,96,249,1)']}
-          style={styles.footerGradient} >
-        <Text style={styles.welcomeText}>Financee Control</Text>
-        <Text style={styles.welcomeText}>Sistema Controle Financeiro</Text>
-          </LinearGradient>
-        
+        {/* Substituindo LinearGradient por View com cor sólida */}
+        <View style={styles.footerGradient}>
+          <Text style={styles.welcomeText}></Text>
+          <Text style={styles.welcomeText}>Sistema Controle Financeiro</Text>
+        </View>
       </View>
     </NavigationContainer>
   );
@@ -36,7 +40,7 @@ const styles = StyleSheet.create({
   },
   headerGradient: {
     width: '100%',
-    height: '25%',
+    height: '30%',
     padding: 20,
     borderBottomLeftRadius: 85,
     borderBottomRightRadius: 85,
@@ -51,12 +55,18 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 85,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#007AFF', // Azul padrão do React Native
   },
   welcomeText: {
     color: 'white',
     fontSize: 20,
     fontWeight: 'bold',
   },
+  logo: {
+    width: 250, // Largura do logo
+    height: 250, // Altura do logo
+  },
 });
 
 export default App;
+

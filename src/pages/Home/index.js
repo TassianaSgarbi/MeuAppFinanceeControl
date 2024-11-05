@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#22804c', // Cor de fundo do header
+    backgroundColor: '#007AFF', // Cor de fundo azul do header
     paddingVertical: 10,
     paddingHorizontal: 15, // Adiciona padding horizontal para criar espaço
   },
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   closeButton: {
     marginTop: 20,
     paddingVertical: 15,
-    backgroundColor: '#22804c',
+    backgroundColor: '#007AFF', // Azul igual ao headerGradient
     borderRadius: 10,
     alignItems: 'center',
   },

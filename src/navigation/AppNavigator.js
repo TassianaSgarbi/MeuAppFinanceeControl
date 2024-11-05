@@ -17,7 +17,7 @@ const AppNavigator = () => {
         headerTitleAlign: 'center',
         headerTintColor: 'black',
         headerTitleStyle: {
-          fontWeight: 'bold',
+        fontWeight: 'bold',
         },
       }}
     >
