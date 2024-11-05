@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 
 export default function CadastroDespesas() {
@@ -9,7 +9,12 @@ export default function CadastroDespesas() {
   const [dataPagamento, setDataPagamento] = useState('');
   const [valor, setValor] = useState('');
   const [descricao, setDescricao] = useState('');
+  const [categoriaOptions, setCategoriaOptions] = useState(['Tributária', 'Consumo', 'Outras']);
   const [tipoOptions, setTipoOptions] = useState([]);
+  const [modalCategoriaVisible, setModalCategoriaVisible] = useState(false);
+  const [modalTipoVisible, setModalTipoVisible] = useState(false);
+  const [novaCategoria, setNovaCategoria] = useState('');
+  const [novoTipo, setNovoTipo] = useState('');
 
   const updateTipoDespesas = (selectedCategoria) => {
     setCategoria(selectedCategoria);
@@ -23,6 +28,28 @@ export default function CadastroDespesas() {
     }
     setTipoOptions(options);
     setTipo(''); // Resetar o tipo selecionado
+  };
+
+  const adicionarNovaCategoria = () => {
+    if (novaCategoria.trim() === '') {
+      Alert.alert('Erro', 'A categoria não pode estar vazia.');
+      return;
+    }
+    setCategoriaOptions([...categoriaOptions, novaCategoria]);
+    setCategoria(novaCategoria);
+    setNovaCategoria('');
+    setModalCategoriaVisible(false);
+  };
+
+  const adicionarNovoTipo = () => {
+    if (novoTipo.trim() === '') {
+      Alert.alert('Erro', 'O tipo de despesa não pode estar vazio.');
+      return;
+    }
+    setTipoOptions([...tipoOptions, novoTipo]);
+    setTipo(novoTipo);
+    setNovoTipo('');
+    setModalTipoVisible(false);
   };
 
   const handleSubmit = () => {
@@ -43,6 +70,7 @@ export default function CadastroDespesas() {
         <Text style={styles.subtitle}>Preencha os campos abaixo para cadastrar sua conta!</Text>
 
         <View style={styles.form}>
+          {/* Picker de Categoria */}
           <View style={styles.inputContainer}>
             <Picker
               selectedValue={categoria}
@@ -50,12 +78,18 @@ export default function CadastroDespesas() {
               onValueChange={(itemValue) => updateTipoDespesas(itemValue)}
             >
               <Picker.Item label="Selecione a Categoria" value="" />
-              <Picker.Item label="Tributária" value="Tributária" />
-              <Picker.Item label="Consumo" value="Consumo" />
-              <Picker.Item label="Outras" value="Outras" />
+              {categoriaOptions.map((cat, index) => (
+                <Picker.Item key={index} label={cat} value={cat} />
+              ))}
             </Picker>
           </View>
 
+          {/* Botão para adicionar nova categoria */}
+          <TouchableOpacity style={styles.addButton} onPress={() => setModalCategoriaVisible(true)}>
+            <Text style={styles.addButtonText}>Adicionar Categoria</Text>
+          </TouchableOpacity>
+
+          {/* Picker de Tipo de Despesa */}
           <View style={styles.inputContainer}>
             <Picker
               selectedValue={tipo}
@@ -70,6 +104,63 @@ export default function CadastroDespesas() {
             </Picker>
           </View>
 
+          {/* Botão para adicionar novo tipo de despesa */}
+          <TouchableOpacity style={styles.addButton} onPress={() => setModalTipoVisible(true)}>
+            <Text style={styles.addButtonText}>Adicionar Tipo de Despesa</Text>
+          </TouchableOpacity>
+
+          {/* Modal para adicionar nova categoria */}
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalCategoriaVisible}
+            onRequestClose={() => setModalCategoriaVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Nova Categoria</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Digite a nova categoria"
+                  value={novaCategoria}
+                  onChangeText={setNovaCategoria}
+                />
+                <TouchableOpacity style={styles.modalButton} onPress={adicionarNovaCategoria}>
+                  <Text style={styles.modalButtonText}>Adicionar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalCancelButton} onPress={() => setModalCategoriaVisible(false)}>
+                  <Text style={styles.modalButtonText}>Cancelar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          {/* Modal para adicionar novo tipo de despesa */}
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalTipoVisible}
+            onRequestClose={() => setModalTipoVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Novo Tipo de Despesa</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Digite o novo tipo de despesa"
+                  value={novoTipo}
+                  onChangeText={setNovoTipo}
+                />
+                <TouchableOpacity style={styles.modalButton} onPress={adicionarNovoTipo}>
+                  <Text style={styles.modalButtonText}>Adicionar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalCancelButton} onPress={() => setModalTipoVisible(false)}>
+                  <Text style={styles.modalButtonText}>Cancelar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
@@ -78,7 +169,7 @@ export default function CadastroDespesas() {
               onChangeText={setDataVencimento}
               placeholderTextColor="#888"
               keyboardType="numeric"
-              textAlign="center" // Centralizar o texto
+              textAlign="center"
             />
           </View>
 
@@ -91,7 +182,7 @@ export default function CadastroDespesas() {
               placeholderTextColor="#888"
               keyboardType="numeric"
               editable={false}
-              textAlign="center" // Centralizar o texto
+              textAlign="center"
             />
           </View>
 
@@ -103,7 +194,7 @@ export default function CadastroDespesas() {
               onChangeText={setValor}
               placeholderTextColor="#888"
               keyboardType="numeric"
-              textAlign="center" // Centralizar o texto
+              textAlign="center"
             />
           </View>
 
@@ -114,14 +205,13 @@ export default function CadastroDespesas() {
               value={descricao}
               onChangeText={setDescricao}
               placeholderTextColor="#888"
-              textAlign="center" // Centralizar o texto
+              textAlign="center"
             />
           </View>
 
           <TouchableOpacity style={styles.button} onPress={handleSubmit}>
             <Text style={styles.buttonText}>Cadastrar</Text>
           </TouchableOpacity>
-
         </View>
       </View>
     </ScrollView>
@@ -131,77 +221,110 @@ export default function CadastroDespesas() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: 'white',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    padding: 20,
+    backgroundColor: '#fff',
   },
   content: {
-    flex: 1,
     alignItems: 'center',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
-  },
   subtitle: {
-    fontSize: 16,
-    color: '#888',
-    marginBottom: 20,
-    textAlign: 'center', // Centralizar o texto
-    width: '100%',
+    fontSize: 18,
+    marginVertical: 10,
+    textAlign: 'center',
+    color: '#333',
   },
   form: {
     width: '100%',
-    maxWidth: 400,
   },
   inputContainer: {
-    marginBottom: 15,
-    alignItems: 'center', // Centralizar o Picker
+    marginVertical: 8,
   },
   picker: {
     height: 50,
-    width: '100%',
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 10,
-    backgroundColor: 'white',
-    color: '#333',
-  },
-  label: {
-    fontSize: 14,
-    color: '#333',
-    marginTop: 5,
-    textAlign: 'center',
+    backgroundColor: '#f1f1f1',
+    borderRadius: 5,
   },
   input: {
     height: 50,
-    width: '100%',
-    borderColor: '#ddd',
     borderWidth: 1,
-    borderRadius: 10,
-    marginBottom: 15,
-    paddingHorizontal: 15,
-    backgroundColor: 'white',
-    color: '#333',
-    textAlign: 'center', // Centralizar o texto
+    borderColor: '#ddd',
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    fontSize: 16,
+    backgroundColor: '#f9f9f9',
   },
   button: {
-    backgroundColor: '#007BFF',
-    borderRadius: 10,
+    backgroundColor: '#007BFF', // Cor dos botões principais
     paddingVertical: 15,
-    paddingHorizontal: 20,
+    borderRadius: 5,
     alignItems: 'center',
-    marginTop: 20,
+    marginVertical: 10,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
-  secondaryButton: {
-    backgroundColor: '#6c757d',
-    marginTop: 10,
+  addButton: {
+    backgroundColor: '#007BFF', // Cor do botão de adicionar categoria e tipo de despesa
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginVertical: 5,
+  },
+  addButtonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#333',
+  },
+  modalInput: {
+    width: '100%',
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    fontSize: 16,
+    backgroundColor: '#f9f9f9',
+    marginBottom: 10,
+  },
+  modalButton: {
+    backgroundColor: '#007BFF', // Cor dos botões no modal
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginVertical: 5,
+  },
+  modalCancelButton: {
+    backgroundColor: '#007BFF', // Cor do botão Cancelar no modal
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginVertical: 5,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 16,
   },
 });
