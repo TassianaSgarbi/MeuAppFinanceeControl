@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   },
   footerGradient: {
     width: '100%',
-    height: '15%',
+    height: '10%',
     padding: 20,
     borderTopLeftRadius: 85,
     borderTopRightRadius: 85,

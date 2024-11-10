@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import DateTimePickerModal from 'react-native-modal-datetime-picker'; // Importar o DateTimePickerModal
+import moment from 'moment'; // Usar para formatar a data
 
 export default function CadastroDespesas() {
   const [categoria, setCategoria] = useState('');
@@ -9,12 +11,14 @@ export default function CadastroDespesas() {
   const [dataPagamento, setDataPagamento] = useState('');
   const [valor, setValor] = useState('');
   const [descricao, setDescricao] = useState('');
-  const [categoriaOptions, setCategoriaOptions] = useState(['Tributária', 'Consumo', 'Outras']);
+  const [categoriaOptions, setCategoriaOptions] = useState([]);
   const [tipoOptions, setTipoOptions] = useState([]);
   const [modalCategoriaVisible, setModalCategoriaVisible] = useState(false);
   const [modalTipoVisible, setModalTipoVisible] = useState(false);
   const [novaCategoria, setNovaCategoria] = useState('');
   const [novoTipo, setNovoTipo] = useState('');
+  const [isDatePickerVisible, setDatePickerVisible] = useState(false); // Para controlar a visibilidade do calendário
+  const [selectedDate, setSelectedDate] = useState(''); // Armazenar a data selecionada
 
   const updateTipoDespesas = (selectedCategoria) => {
     setCategoria(selectedCategoria);
@@ -50,6 +54,11 @@ export default function CadastroDespesas() {
     setTipo(novoTipo);
     setNovoTipo('');
     setModalTipoVisible(false);
+  };
+
+  const handleDateConfirm = (date) => {
+    setSelectedDate(moment(date).format('DD/MM/YYYY')); // Formatar a data no formato desejado
+    setDatePickerVisible(false);
   };
 
   const handleSubmit = () => {
@@ -161,18 +170,21 @@ export default function CadastroDespesas() {
             </View>
           </Modal>
 
+          {/* Data de Vencimento */}
           <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Data de Vencimento"
-              value={dataVencimento}
-              onChangeText={setDataVencimento}
-              placeholderTextColor="#888"
-              keyboardType="numeric"
-              textAlign="center"
-            />
+            <TouchableOpacity onPress={() => setDatePickerVisible(true)}>
+              <TextInput
+                style={styles.input}
+                placeholder="Data de Vencimento"
+                value={dataVencimento || selectedDate}
+                editable={false}
+                placeholderTextColor="#888"
+                textAlign="center"
+              />
+            </TouchableOpacity>
           </View>
 
+          {/* Data de Pagamento */}
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
@@ -186,6 +198,7 @@ export default function CadastroDespesas() {
             />
           </View>
 
+          {/* Valor */}
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
@@ -198,6 +211,7 @@ export default function CadastroDespesas() {
             />
           </View>
 
+          {/* Observação */}
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
@@ -214,6 +228,15 @@ export default function CadastroDespesas() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* DatePicker Modal */}
+      <DateTimePickerModal
+        isVisible={isDatePickerVisible}
+        mode="date"
+        onConfirm={handleDateConfirm}
+        onCancel={() => setDatePickerVisible(false)}
+        date={new Date()}
+      />
     </ScrollView>
   );
 }

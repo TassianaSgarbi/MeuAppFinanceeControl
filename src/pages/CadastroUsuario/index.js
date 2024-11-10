@@ -1,17 +1,68 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { TextInputMask } from 'react-native-masked-text';
+import axios from 'axios'; // Importando o axios
+
+// Função para validar e-mail
+const isValidEmail = (email) => {
+  const regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+  return regex.test(email);
+};
+
+// Função para validar CPF
+import { cpf as cpfValidator } from 'cpf-cnpj-validator';
+
+const isValidCpf = (cpf) => cpfValidator.isValid(cpf);
 
 export default function CadastroUsuario() {
   const [name, setName] = useState('');
   const [cpf, setCpf] = useState('');
-  const [dob, setDob] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('');  // Estado para mensagem de sucesso
 
-  const handleSubmit = () => {
-    // Lógica para lidar com o envio do formulário
-    console.log({ name, cpf, dob, email, password });
+  const handleSubmit = async () => {
+    // Verificar se todos os campos estão preenchidos
+    if (!name || !cpf || !email || !password) {
+      console.error('Todos os campos são obrigatórios');
+      return;
+    }
+
+    // Verificar se o e-mail é válido
+    if (!isValidEmail(email)) {
+      console.error('E-mail inválido');
+      return;
+    }
+
+    // Verificar se o CPF é válido
+    if (!isValidCpf(cpf)) {
+      console.error('CPF inválido');
+      return;
+    }
+
+    const data = { name, cpf, email, password };
+
+    try {
+      // Enviar os dados para o backend via POST
+      const response = await axios.post('http://192.168.0.23:3333/users', data, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      console.log(response.data); // Exibe a resposta do servidor
+
+      // Exibir a mensagem de sucesso
+      setMessage('Usuário Cadastrado com Sucesso!');
+
+      // Opcional: você pode limpar os campos após o cadastro
+      setName('');
+      setCpf('');
+      setEmail('');
+      setPassword('');
+
+      // Exibir um alerta de sucesso
+      Alert.alert('Cadastro bem-sucedido', 'Usuário Cadastrado com Sucesso!');
+    } catch (error) {
+      console.error('Erro ao cadastrar usuário', error.response?.data || error.message);
+    }
   };
 
   return (
@@ -20,7 +71,6 @@ export default function CadastroUsuario() {
       showsVerticalScrollIndicator={true} // Mostrar a barra de rolagem vertical
     >
       <View style={styles.content}>
-        {/* <Text style={styles.title}>Cadastro de Usuário</Text> */}
         <View style={styles.form}>
           <TextInput
             style={styles.input}
@@ -35,18 +85,6 @@ export default function CadastroUsuario() {
             type={'cpf'}
             value={cpf}
             onChangeText={setCpf}
-            placeholderTextColor="#888"
-            keyboardType="numeric"
-          />
-          <TextInputMask
-            style={styles.input}
-            placeholder="Data de Nascimento"
-            type={'datetime'}
-            options={{
-              format: 'DD/MM/YYYY',
-            }}
-            value={dob}
-            onChangeText={setDob}
             placeholderTextColor="#888"
             keyboardType="numeric"
           />
@@ -69,6 +107,9 @@ export default function CadastroUsuario() {
           <TouchableOpacity style={styles.button} onPress={handleSubmit}>
             <Text style={styles.buttonText}>Cadastrar</Text>
           </TouchableOpacity>
+
+          {/* Exibir a mensagem de sucesso, se houver */}
+          {message ? <Text style={styles.successMessage}>{message}</Text> : null}
         </View>
       </View>
     </ScrollView>
