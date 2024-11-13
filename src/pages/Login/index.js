@@ -1,32 +1,40 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import axios from 'axios'; // Importando o axios
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Importe o AsyncStorage
+import axios from 'axios';
 
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  // Função para armazenar o token no AsyncStorage
+  const saveToken = async (token) => {
+    try {
+      await AsyncStorage.setItem('authToken', token);
+      console.log("Token salvo com sucesso:", token); // Verifique se o token é salvo corretamente
+    } catch (error) {
+      console.error("Erro ao salvar o token:", error);
+    }
+  };
+
   // Função para realizar o login
   const handleLogin = async () => {
     try {
-      // Enviar uma requisição POST para o backend para verificar o e-mail e senha
       const response = await axios.post('http://192.168.0.23:3333/session', {
         email,
         password
       });
 
-      // Se o login for bem-sucedido, você pode armazenar o token JWT e redirecionar
       if (response.data.token) {
         Alert.alert('Login bem-sucedido');
-        // Armazenar o token ou dados do usuário conforme necessário
-        // Exemplo de armazenamento do token em AsyncStorage
-        // await AsyncStorage.setItem('userToken', response.data.token);
+        
+        // Salvar o token no AsyncStorage
+        await saveToken(response.data.token);
 
         // Navegar para a tela Home
         navigation.navigate('Home');
       }
     } catch (error) {
-      // Caso haja erro (como dados incorretos)
       console.error('Erro ao fazer login', error.response?.data || error.message);
       Alert.alert('Erro', 'E-mail ou senha incorretos.');
     }

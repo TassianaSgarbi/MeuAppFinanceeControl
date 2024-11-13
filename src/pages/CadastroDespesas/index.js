@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import DateTimePickerModal from 'react-native-modal-datetime-picker'; // Importar o DateTimePickerModal
-import moment from 'moment'; // Usar para formatar a data
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePickerModal from 'react-native-modal-datetime-picker'; // Importe o DateTimePickerModal
 
 export default function CadastroDespesas() {
   const [categoria, setCategoria] = useState('');
@@ -17,22 +18,46 @@ export default function CadastroDespesas() {
   const [modalTipoVisible, setModalTipoVisible] = useState(false);
   const [novaCategoria, setNovaCategoria] = useState('');
   const [novoTipo, setNovoTipo] = useState('');
-  const [isDatePickerVisible, setDatePickerVisible] = useState(false); // Para controlar a visibilidade do calendário
-  const [selectedDate, setSelectedDate] = useState(''); // Armazenar a data selecionada
+  const [isDatePickerVisible, setDatePickerVisible] = useState(false);
 
-  const updateTipoDespesas = (selectedCategoria) => {
-    setCategoria(selectedCategoria);
-    let options = [];
-    if (selectedCategoria === 'Tributária') {
-      options = ['Imposto de Renda', 'IPTU', 'Outros'];
-    } else if (selectedCategoria === 'Consumo') {
-      options = ['Água', 'Energia', 'Internet'];
-    } else if (selectedCategoria === 'Outras') {
-      options = ['Manutenção', 'Transporte', 'Outros'];
+  const getToken = async () => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      return token;
+    } catch (error) {
+      console.error("Erro ao obter o token: ", error);
+      return null;
     }
-    setTipoOptions(options);
-    setTipo(''); // Resetar o tipo selecionado
   };
+
+  const fetchCategorias = async () => {
+    try {
+      const token = await getToken();
+      const response = await axios.get('http://192.168.0.23:3333/categories', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCategoriaOptions(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar categorias:', error);
+    }
+  };
+
+  const fetchTiposDespesas = async () => {
+    try {
+      const token = await getToken();
+      const response = await axios.get('http://192.168.0.23:3333/expenses', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setTipoOptions(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar tipos de despesa:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategorias();
+    fetchTiposDespesas();
+  }, []);
 
   const adicionarNovaCategoria = () => {
     if (novaCategoria.trim() === '') {
@@ -56,21 +81,32 @@ export default function CadastroDespesas() {
     setModalTipoVisible(false);
   };
 
-  const handleDateConfirm = (date) => {
-    setSelectedDate(moment(date).format('DD/MM/YYYY')); // Formatar a data no formato desejado
-    setDatePickerVisible(false);
+  const handleSubmit = async () => {
+    try {
+      const token = await getToken();
+      const data = {
+        categoria,
+        tipo,
+        dataVencimento,
+        dataPagamento,
+        valor,
+        descricao,
+      };
+      
+      await axios.post('http://192.168.0.23:3333/expense', data, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      Alert.alert('Sucesso', 'Despesa cadastrada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao cadastrar despesa:', error);
+      Alert.alert('Erro', 'Não foi possível cadastrar a despesa. Verifique os dados e tente novamente.');
+    }
   };
 
-  const handleSubmit = () => {
-    // Lógica para enviar os dados para o backend ou processar o cadastro
-    console.log({
-      categoria,
-      tipo,
-      dataVencimento,
-      dataPagamento,
-      valor,
-      descricao,
-    });
+  const handleDateConfirm = (date) => {
+    setDataVencimento(date.toISOString().split('T')[0]); // Defina a data formatada no formato "YYYY-MM-DD"
+    setDatePickerVisible(false); // Fecha o modal de data após selecionar
   };
 
   return (
@@ -84,7 +120,7 @@ export default function CadastroDespesas() {
             <Picker
               selectedValue={categoria}
               style={styles.picker}
-              onValueChange={(itemValue) => updateTipoDespesas(itemValue)}
+              onValueChange={(itemValue) => setCategoria(itemValue)}
             >
               <Picker.Item label="Selecione a Categoria" value="" />
               {categoriaOptions.map((cat, index) => (
@@ -98,13 +134,35 @@ export default function CadastroDespesas() {
             <Text style={styles.addButtonText}>Adicionar Categoria</Text>
           </TouchableOpacity>
 
+          {/* Modal para adicionar nova categoria */}
+          <Modal
+            visible={modalCategoriaVisible}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setModalCategoriaVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Nova Categoria</Text>
+                <TextInput
+                  placeholder="Digite a nova categoria"
+                  style={styles.input}
+                  value={novaCategoria}
+                  onChangeText={setNovaCategoria}
+                />
+                <TouchableOpacity style={styles.modalButton} onPress={adicionarNovaCategoria}>
+                  <Text style={styles.modalButtonText}>Salvar Categoria</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
           {/* Picker de Tipo de Despesa */}
           <View style={styles.inputContainer}>
             <Picker
               selectedValue={tipo}
               style={styles.picker}
               onValueChange={(itemValue) => setTipo(itemValue)}
-              enabled={tipoOptions.length > 0}
             >
               <Picker.Item label="Selecione o Tipo de Despesa" value="" />
               {tipoOptions.map((tipoOption, index) => (
@@ -118,53 +176,24 @@ export default function CadastroDespesas() {
             <Text style={styles.addButtonText}>Adicionar Tipo de Despesa</Text>
           </TouchableOpacity>
 
-          {/* Modal para adicionar nova categoria */}
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={modalCategoriaVisible}
-            onRequestClose={() => setModalCategoriaVisible(false)}
-          >
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Nova Categoria</Text>
-                <TextInput
-                  style={styles.modalInput}
-                  placeholder="Digite a nova categoria"
-                  value={novaCategoria}
-                  onChangeText={setNovaCategoria}
-                />
-                <TouchableOpacity style={styles.modalButton} onPress={adicionarNovaCategoria}>
-                  <Text style={styles.modalButtonText}>Adicionar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.modalCancelButton} onPress={() => setModalCategoriaVisible(false)}>
-                  <Text style={styles.modalButtonText}>Cancelar</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
-
           {/* Modal para adicionar novo tipo de despesa */}
           <Modal
-            animationType="slide"
-            transparent={true}
             visible={modalTipoVisible}
+            transparent={true}
+            animationType="slide"
             onRequestClose={() => setModalTipoVisible(false)}
           >
             <View style={styles.modalContainer}>
               <View style={styles.modalContent}>
                 <Text style={styles.modalTitle}>Novo Tipo de Despesa</Text>
                 <TextInput
-                  style={styles.modalInput}
                   placeholder="Digite o novo tipo de despesa"
+                  style={styles.input}
                   value={novoTipo}
                   onChangeText={setNovoTipo}
                 />
                 <TouchableOpacity style={styles.modalButton} onPress={adicionarNovoTipo}>
-                  <Text style={styles.modalButtonText}>Adicionar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.modalCancelButton} onPress={() => setModalTipoVisible(false)}>
-                  <Text style={styles.modalButtonText}>Cancelar</Text>
+                  <Text style={styles.modalButtonText}>Salvar Tipo de Despesa</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -176,7 +205,7 @@ export default function CadastroDespesas() {
               <TextInput
                 style={styles.input}
                 placeholder="Data de Vencimento"
-                value={dataVencimento || selectedDate}
+                value={dataVencimento}
                 editable={false}
                 placeholderTextColor="#888"
                 textAlign="center"
@@ -186,16 +215,17 @@ export default function CadastroDespesas() {
 
           {/* Data de Pagamento */}
           <View style={styles.inputContainer}>
+          <TouchableOpacity onPress={() => setDatePickerVisible(true)}>
             <TextInput
               style={styles.input}
               placeholder="Data de Pagamento"
               value={dataPagamento}
-              onChangeText={setDataPagamento}
+              editable={false}
               placeholderTextColor="#888"
               keyboardType="numeric"
-              editable={false}
               textAlign="center"
             />
+             </TouchableOpacity>
           </View>
 
           {/* Valor */}
@@ -211,11 +241,11 @@ export default function CadastroDespesas() {
             />
           </View>
 
-          {/* Observação */}
+          {/* Descrição */}
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Observação"
+              placeholder="Descrição"
               value={descricao}
               onChangeText={setDescricao}
               placeholderTextColor="#888"
@@ -223,23 +253,24 @@ export default function CadastroDespesas() {
             />
           </View>
 
+          {/* Botão de Salvar */}
           <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-            <Text style={styles.buttonText}>Cadastrar</Text>
+            <Text style={styles.buttonText}>Cadastrar Despesa</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* DatePicker Modal */}
+      {/* Date Picker Modal */}
       <DateTimePickerModal
         isVisible={isDatePickerVisible}
         mode="date"
         onConfirm={handleDateConfirm}
         onCancel={() => setDatePickerVisible(false)}
-        date={new Date()}
       />
     </ScrollView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

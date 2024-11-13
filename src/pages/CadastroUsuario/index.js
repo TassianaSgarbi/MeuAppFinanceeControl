@@ -50,7 +50,7 @@ export default function CadastroUsuario() {
       console.log(response.data); // Exibe a resposta do servidor
 
       // Exibir a mensagem de sucesso
-      setMessage('Usuário Cadastrado com Sucesso!');
+      //setMessage('Usuário Cadastrado com Sucesso!');
 
       // Opcional: você pode limpar os campos após o cadastro
       setName('');

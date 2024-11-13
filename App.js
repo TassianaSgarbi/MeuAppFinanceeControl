@@ -1,10 +1,31 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './src/navigation/AppNavigator';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Configuração do interceptor do Axios para incluir o token em todas as requisições
+axios.interceptors.request.use(
+  async (config) => {
+    const token = await AsyncStorage.getItem('authToken'); // Recupera o token
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`; // Adiciona o token ao cabeçalho
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 const App = () => {
+  useEffect(() => {
+    // Esse useEffect pode ser utilizado para outras configurações futuras
+    console.log('App carregado com sucesso');
+  }, []);
+
   return (
     <NavigationContainer>
       <View style={styles.container}>
