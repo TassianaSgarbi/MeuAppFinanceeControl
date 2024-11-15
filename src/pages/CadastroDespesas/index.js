@@ -271,7 +271,6 @@ export default function CadastroDespesas() {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,

@@ -84,6 +84,17 @@ export default function Home() {
       <Modal visible={menuVisible} transparent animationType="none">
         <TouchableOpacity style={styles.modalOverlay} onPress={closeMenu}>
           <Animated.View style={[styles.menuContainer, { transform: [{ translateX: menuAnimation }] }]}>
+
+          <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                closeMenu();
+                navigation.navigate('CadastroCategoria'); // Navega para CadastroDespesas
+              }}
+            >
+              <Text style={styles.menuItemText}>Cadastrar Categoria</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
