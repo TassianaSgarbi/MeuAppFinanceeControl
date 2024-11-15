@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, Alert, FlatList } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -7,14 +7,14 @@ export default function CadastroCategoria() {
   const [categoria, setCategoria] = useState('');
   const [novaCategoria, setNovaCategoria] = useState('');
   const [categoriaOptions, setCategoriaOptions] = useState([]);
-  const [modalCategoriaVisible, setModalCategoriaVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const getToken = async () => {
     try {
       const token = await AsyncStorage.getItem('authToken');
       return token;
     } catch (error) {
-      console.error("Erro ao obter o token: ", error);
+      console.error('Erro ao obter o token: ', error);
       return null;
     }
   };
@@ -23,7 +23,7 @@ export default function CadastroCategoria() {
     try {
       const token = await getToken();
       const response = await axios.get('http://192.168.0.23:3333/categories', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       setCategoriaOptions(response.data);
     } catch (error) {
@@ -35,26 +35,43 @@ export default function CadastroCategoria() {
     fetchCategorias();
   }, []);
 
-  const adicionarNovaCategoria = () => {
+  const adicionarNovaCategoria = async () => {
     if (novaCategoria.trim() === '') {
       Alert.alert('Erro', 'A categoria não pode estar vazia.');
       return;
     }
-    setCategoriaOptions([...categoriaOptions, novaCategoria]);
-    setCategoria(novaCategoria);
-    setNovaCategoria('');
-    setModalCategoriaVisible(false);
+    try {
+      const token = await getToken();
+      const data = { name: novaCategoria };
+      await axios.post('http://192.168.0.23:3333/category', data, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCategoriaOptions((prevOptions) => [...prevOptions, { id: Date.now(), name: novaCategoria }]);
+      setNovaCategoria('');
+      setModalVisible(false);
+      Alert.alert('Sucesso', 'Categoria adicionada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao adicionar nova categoria:', error);
+      Alert.alert('Erro', 'Não foi possível adicionar a categoria.');
+    }
+  };
+
+  const handleCategoriaSelect = (categoriaSelecionada) => {
+    setCategoria(categoriaSelecionada.name);
+    setModalVisible(false);
   };
 
   const handleSubmit = async () => {
+    if (categoria.trim() === '') {
+      Alert.alert('Erro', 'Selecione ou adicione uma categoria.');
+      return;
+    }
     try {
       const token = await getToken();
-      const data = { name: categoria, user_id: 'user-id-placeholder' }; // Adapte o user_id conforme necessário
-
+      const data = { name: categoria };
       await axios.post('http://192.168.0.23:3333/category', data, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-
       Alert.alert('Sucesso', 'Categoria cadastrada com sucesso!');
       setCategoria('');
     } catch (error) {
@@ -64,80 +81,74 @@ export default function CadastroCategoria() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.subtitle}>Preencha os campos abaixo para cadastrar uma categoria!</Text>
+    <View style={styles.container}>
+      <Text style={styles.subtitle}>Preencha os campos abaixo para cadastrar uma categoria!</Text>
 
-        <View style={styles.form}>
-          {/* Picker de Categoria */}
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Categoria"
-              value={categoria}
-              onChangeText={setCategoria}
-              placeholderTextColor="#888"
-            />
-          </View>
+      <View style={styles.form}>
+        {/* Botão para abrir o modal de categorias */}
+        <TouchableOpacity style={styles.input} onPress={() => setModalVisible(true)}>
+          <Text style={styles.inputText}>{categoria || 'Selecionar Categoria'}</Text>
+        </TouchableOpacity>
 
-          {/* Botão para adicionar nova categoria */}
-          <TouchableOpacity style={styles.addButton} onPress={() => setModalCategoriaVisible(true)}>
-            <Text style={styles.addButtonText}>Adicionar Nova Categoria</Text>
-          </TouchableOpacity>
+        {/* Modal para seleção e adição de categorias */}
+        <Modal
+          visible={modalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Selecione ou Adicione uma Categoria</Text>
 
-          {/* Modal para adicionar nova categoria */}
-          <Modal
-            visible={modalCategoriaVisible}
-            transparent={true}
-            animationType="slide"
-            onRequestClose={() => setModalCategoriaVisible(false)}
-          >
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Nova Categoria</Text>
-                <TextInput
-                  placeholder="Digite a nova categoria"
-                  style={styles.input}
-                  value={novaCategoria}
-                  onChangeText={setNovaCategoria}
-                />
-                <TouchableOpacity style={styles.modalButton} onPress={adicionarNovaCategoria}>
-                  <Text style={styles.modalButtonText}>Salvar Categoria</Text>
-                </TouchableOpacity>
-              </View>
+              <FlatList
+                data={categoriaOptions}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.listItem}
+                    onPress={() => handleCategoriaSelect(item)}
+                  >
+                    <Text style={styles.listItemText}>{item.name}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+
+              <TextInput
+                style={styles.input}
+                placeholder="Nova Categoria"
+                value={novaCategoria}
+                onChangeText={setNovaCategoria}
+              />
+              <TouchableOpacity style={styles.modalButton} onPress={adicionarNovaCategoria}>
+                <Text style={styles.modalButtonText}>Adicionar Nova Categoria</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalCloseButton} onPress={() => setModalVisible(false)}>
+                <Text style={styles.modalButtonText}>Fechar</Text>
+              </TouchableOpacity>
             </View>
-          </Modal>
+          </View>
+        </Modal>
 
-          {/* Botão de Salvar */}
-          <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-            <Text style={styles.buttonText}>Cadastrar Categoria</Text>
-          </TouchableOpacity>
-        </View>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
     padding: 20,
     backgroundColor: '#fff',
   },
-  content: {
-    alignItems: 'center',
-  },
   subtitle: {
     fontSize: 18,
-    marginVertical: 10,
+    marginBottom: 20,
     textAlign: 'center',
     color: '#333',
   },
   form: {
-    width: '100%',
-  },
-  inputContainer: {
-    marginVertical: 8,
+    marginVertical: 20,
   },
   input: {
     height: 50,
@@ -145,30 +156,21 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     borderRadius: 5,
     paddingHorizontal: 10,
-    fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  inputText: {
+    color: '#555',
+    textAlign: 'center',
   },
   button: {
-    backgroundColor: '#007BFF', // Cor dos botões principais
-    paddingVertical: 15,
+    backgroundColor: '#007BFF',
+    padding: 15,
     borderRadius: 5,
     alignItems: 'center',
-    marginVertical: 10,
+    marginTop: 10,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  addButton: {
-    backgroundColor: '#007BFF', // Cor do botão de adicionar categoria
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginVertical: 5,
-  },
-  addButtonText: {
     color: '#fff',
     fontSize: 16,
   },
@@ -180,27 +182,40 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '80%',
-    padding: 20,
     backgroundColor: '#fff',
     borderRadius: 10,
-    alignItems: 'center',
+    padding: 20,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 15,
-    color: '#333',
+    textAlign: 'center',
+  },
+  listItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  listItemText: {
+    fontSize: 16,
   },
   modalButton: {
-    backgroundColor: '#007BFF', // Cor dos botões no modal
-    paddingVertical: 12,
-    paddingHorizontal: 25,
+    backgroundColor: '#007BFF',
+    padding: 15,
     borderRadius: 5,
     marginTop: 10,
+    alignItems: 'center',
   },
   modalButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+  },
+  modalCloseButton: {
+    backgroundColor: '#ff4444',
+    padding: 15,
+    borderRadius: 5,
+    marginTop: 10,
+    alignItems: 'center',
   },
 });
