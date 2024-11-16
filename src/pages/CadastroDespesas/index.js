@@ -3,33 +3,39 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Modal,
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import DateTimePickerModal from 'react-native-modal-datetime-picker'; // Importe o DateTimePickerModal
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 export default function CadastroDespesas() {
+  // Estados para os campos de despesa
   const [categoria, setCategoria] = useState('');
   const [tipo, setTipo] = useState('');
   const [dataVencimento, setDataVencimento] = useState('');
   const [dataPagamento, setDataPagamento] = useState('');
   const [valor, setValor] = useState('');
   const [descricao, setDescricao] = useState('');
+
+  // Estados para as opções de categorias e tipos
   const [categoriaOptions, setCategoriaOptions] = useState([]);
   const [tipoOptions, setTipoOptions] = useState([]);
-  const [modalCategoriaVisible, setModalCategoriaVisible] = useState(false);
+
+  // Estados para modais
   const [modalTipoVisible, setModalTipoVisible] = useState(false);
-  const [novaCategoria, setNovaCategoria] = useState('');
   const [novoTipo, setNovoTipo] = useState('');
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
+  const [campoDataAtual, setCampoDataAtual] = useState(null);
 
+  // Função para obter o token armazenado
   const getToken = async () => {
     try {
       const token = await AsyncStorage.getItem('authToken');
       return token;
     } catch (error) {
-      console.error("Erro ao obter o token: ", error);
+      console.error("Erro ao obter o token:", error);
       return null;
     }
   };
 
+  // Função para buscar categorias do backend
   const fetchCategorias = async () => {
     try {
       const token = await getToken();
@@ -39,9 +45,11 @@ export default function CadastroDespesas() {
       setCategoriaOptions(response.data);
     } catch (error) {
       console.error('Erro ao buscar categorias:', error);
+      Alert.alert('Erro', 'Não foi possível carregar as categorias. Tente novamente.');
     }
   };
 
+  // Função para buscar tipos de despesa do backend
   const fetchTiposDespesas = async () => {
     try {
       const token = await getToken();
@@ -51,25 +59,17 @@ export default function CadastroDespesas() {
       setTipoOptions(response.data);
     } catch (error) {
       console.error('Erro ao buscar tipos de despesa:', error);
+      Alert.alert('Erro', 'Não foi possível carregar os tipos de despesa. Tente novamente.');
     }
   };
 
+  // useEffect para buscar categorias e tipos ao montar o componente
   useEffect(() => {
     fetchCategorias();
     fetchTiposDespesas();
   }, []);
 
-  const adicionarNovaCategoria = () => {
-    if (novaCategoria.trim() === '') {
-      Alert.alert('Erro', 'A categoria não pode estar vazia.');
-      return;
-    }
-    setCategoriaOptions([...categoriaOptions, novaCategoria]);
-    setCategoria(novaCategoria);
-    setNovaCategoria('');
-    setModalCategoriaVisible(false);
-  };
-
+  // Função para adicionar um novo tipo de despesa
   const adicionarNovoTipo = () => {
     if (novoTipo.trim() === '') {
       Alert.alert('Erro', 'O tipo de despesa não pode estar vazio.');
@@ -81,38 +81,63 @@ export default function CadastroDespesas() {
     setModalTipoVisible(false);
   };
 
+  // Função para submeter o formulário de cadastro de despesa
   const handleSubmit = async () => {
+    if (!categoria || !tipo || !dataVencimento || !dataPagamento || !valor) {
+      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+      return;
+    }
+
     try {
       const token = await getToken();
       const data = {
-        categoria,
-        tipo,
-        dataVencimento,
-        dataPagamento,
-        valor,
-        descricao,
+        description: descricao,
+        amount: valor,
+        due_date: dataVencimento,
+        category_id: categoria,
+        payment_date: dataPagamento || null,
       };
-      
+
       await axios.post('http://192.168.0.23:3333/expense', data, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       Alert.alert('Sucesso', 'Despesa cadastrada com sucesso!');
+      // Limpar os campos após o cadastro
+      setCategoria('');
+      setTipo('');
+      setDataVencimento('');
+      setDataPagamento('');
+      setValor('');
+      setDescricao('');
     } catch (error) {
       console.error('Erro ao cadastrar despesa:', error);
-      Alert.alert('Erro', 'Não foi possível cadastrar a despesa. Verifique os dados e tente novamente.');
+      Alert.alert('Erro', 'Não foi possível cadastrar a despesa. Tente novamente.');
     }
   };
 
+  // Função para confirmar a data selecionada
   const handleDateConfirm = (date) => {
-    setDataVencimento(date.toISOString().split('T')[0]); // Defina a data formatada no formato "YYYY-MM-DD"
-    setDatePickerVisible(false); // Fecha o modal de data após selecionar
+    const dataFormatada = date.toISOString().split('T')[0]; // Formato "YYYY-MM-DD"
+    if (campoDataAtual === 'vencimento') {
+      setDataVencimento(dataFormatada);
+    } else if (campoDataAtual === 'pagamento') {
+      setDataPagamento(dataFormatada);
+    }
+    setDatePickerVisible(false);
+    setCampoDataAtual(null);
+  };
+
+  // Função para abrir o date picker para o campo específico
+  const abrirDatePicker = (campo) => {
+    setCampoDataAtual(campo);
+    setDatePickerVisible(true);
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.subtitle}>Preencha os campos abaixo para cadastrar sua conta!</Text>
+        <Text style={styles.subtitle}>Preencha os campos abaixo para cadastrar sua despesa!</Text>
 
         <View style={styles.form}>
           {/* Picker de Categoria */}
@@ -123,39 +148,11 @@ export default function CadastroDespesas() {
               onValueChange={(itemValue) => setCategoria(itemValue)}
             >
               <Picker.Item label="Selecione a Categoria" value="" />
-              {categoriaOptions.map((cat, index) => (
-                <Picker.Item key={index} label={cat} value={cat} />
+              {categoriaOptions.map((cat) => (
+                <Picker.Item key={cat.id} label={cat.name} value={cat.id} />
               ))}
             </Picker>
           </View>
-
-          {/* Botão para adicionar nova categoria */}
-          <TouchableOpacity style={styles.addButton} onPress={() => setModalCategoriaVisible(true)}>
-            <Text style={styles.addButtonText}>Adicionar Categoria</Text>
-          </TouchableOpacity>
-
-          {/* Modal para adicionar nova categoria */}
-          <Modal
-            visible={modalCategoriaVisible}
-            transparent={true}
-            animationType="slide"
-            onRequestClose={() => setModalCategoriaVisible(false)}
-          >
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Nova Categoria</Text>
-                <TextInput
-                  placeholder="Digite a nova categoria"
-                  style={styles.input}
-                  value={novaCategoria}
-                  onChangeText={setNovaCategoria}
-                />
-                <TouchableOpacity style={styles.modalButton} onPress={adicionarNovaCategoria}>
-                  <Text style={styles.modalButtonText}>Salvar Categoria</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
 
           {/* Picker de Tipo de Despesa */}
           <View style={styles.inputContainer}>
@@ -201,7 +198,7 @@ export default function CadastroDespesas() {
 
           {/* Data de Vencimento */}
           <View style={styles.inputContainer}>
-            <TouchableOpacity onPress={() => setDatePickerVisible(true)}>
+            <TouchableOpacity onPress={() => abrirDatePicker('vencimento')}>
               <TextInput
                 style={styles.input}
                 placeholder="Data de Vencimento"
@@ -215,17 +212,16 @@ export default function CadastroDespesas() {
 
           {/* Data de Pagamento */}
           <View style={styles.inputContainer}>
-          <TouchableOpacity onPress={() => setDatePickerVisible(true)}>
-            <TextInput
-              style={styles.input}
-              placeholder="Data de Pagamento"
-              value={dataPagamento}
-              editable={false}
-              placeholderTextColor="#888"
-              keyboardType="numeric"
-              textAlign="center"
-            />
-             </TouchableOpacity>
+            <TouchableOpacity onPress={() => abrirDatePicker('pagamento')}>
+              <TextInput
+                style={styles.input}
+                placeholder="Data de Pagamento"
+                value={dataPagamento}
+                editable={false}
+                placeholderTextColor="#888"
+                textAlign="center"
+              />
+            </TouchableOpacity>
           </View>
 
           {/* Valor */}
