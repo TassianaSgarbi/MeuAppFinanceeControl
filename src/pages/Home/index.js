@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions, TouchableOpacity, Modal, Animated } from 'react-native';
-import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
-import Feather from '@expo/vector-icons/Feather'; // Importando Feather Icons
+import { View, Text, TouchableOpacity, Modal, Animated, Dimensions, ScrollView, StyleSheet, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Feather } from '@expo/vector-icons';
+import { LineChart, BarChart, PieChart } from 'react-native-chart-kit';
 import { useNavigation } from '@react-navigation/native';
 
 const screenWidth = Dimensions.get('window').width;
@@ -55,6 +56,7 @@ export default function Home() {
     },
   ];
 
+  // Função para abrir o menu
   const openMenu = () => {
     setMenuVisible(true);
     Animated.timing(menuAnimation, {
@@ -64,12 +66,30 @@ export default function Home() {
     }).start();
   };
 
+  // Função para fechar o menu
   const closeMenu = () => {
     Animated.timing(menuAnimation, {
       toValue: -menuWidth,
       duration: 300,
       useNativeDriver: false,
     }).start(() => setMenuVisible(false));
+  };
+
+  // Função para deslogar o usuário
+  const logout = async () => {
+    try {
+      // Remover o token de autenticação
+      await AsyncStorage.removeItem('authToken');
+      
+      // Exibir uma mensagem no console para confirmação
+      console.log("Usuário deslogado com sucesso");
+
+      // Navegar para a tela de login
+      navigation.navigate('Login');
+    } catch (error) {
+      console.error("Erro ao deslogar:", error);
+      Alert.alert('Erro', 'Não foi possível deslogar. Tente novamente.');
+    }
   };
 
   return (
@@ -84,12 +104,11 @@ export default function Home() {
       <Modal visible={menuVisible} transparent animationType="none">
         <TouchableOpacity style={styles.modalOverlay} onPress={closeMenu}>
           <Animated.View style={[styles.menuContainer, { transform: [{ translateX: menuAnimation }] }]}>
-
-          <TouchableOpacity
+            <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
                 closeMenu();
-                navigation.navigate('CadastroCategoria'); // Navega para CadastroDespesas
+                navigation.navigate('CadastroCategoria'); // Navega para CadastroCategoria
               }}
             >
               <Text style={styles.menuItemText}>Cadastrar Categoria</Text>
@@ -129,7 +148,7 @@ export default function Home() {
               style={styles.menuItem}
               onPress={() => {
                 closeMenu();
-                navigation.navigate('Login'); // Navega para a tela de login (sair do sistema)
+                logout(); // Chama a função logout
               }}
             >
               <Text style={styles.menuItemText}>Sair do Sistema</Text>
@@ -203,7 +222,7 @@ const chartConfig = {
 const styles = StyleSheet.create({
   scrollContainer: {
     paddingVertical: 20,
-    backgroundColor: '#fff', // Garante o fundo branco da tela
+    backgroundColor: '#fff',
   },
   chartContainer: {
     alignItems: 'center',
@@ -216,23 +235,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#007AFF', // Cor de fundo azul do header
+    backgroundColor: '#007AFF',
     paddingVertical: 10,
-    paddingHorizontal: 15, // Adiciona padding horizontal para criar espaço
+    paddingHorizontal: 15,
   },
   menuIcon: {
     paddingHorizontal: 15,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fundo semi-transparente para o modal
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
-    alignItems: 'flex-start', // Alinha o menu ao início (esquerda)
+    alignItems: 'flex-start',
   },
   menuContainer: {
-    width: menuWidth, // Metade da largura da tela
-    height: '50%', // Alcança a metade da altura da tela
-    backgroundColor: 'rgba(255, 255, 255, 0.9)', // Fundo transparente
+    width: menuWidth,
+    height: '50%',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     padding: 20,
     justifyContent: 'center',
   },
@@ -247,7 +266,7 @@ const styles = StyleSheet.create({
   closeButton: {
     marginTop: 20,
     paddingVertical: 15,
-    backgroundColor: '#007AFF', // Azul igual ao headerGradient
+    backgroundColor: '#007AFF',
     borderRadius: 10,
     alignItems: 'center',
   },

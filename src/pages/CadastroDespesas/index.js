@@ -75,33 +75,46 @@ export default function CadastroDespesas() {
       Alert.alert('Erro', 'O tipo de despesa não pode estar vazio.');
       return;
     }
-    setTipoOptions([...tipoOptions, novoTipo]);
-    setTipo(novoTipo);
-    setNovoTipo('');
-    setModalTipoVisible(false);
-  };
+    // Adicionando o novo tipo à lista de opções
+  const novoTipoObjeto = { id: novoTipo, description: novoTipo }; // Adicionando um objeto com 'id' e 'description'
+  setTipoOptions([...tipoOptions, novoTipoObjeto]);
+
+  // Definindo o tipo selecionado para o novo tipo
+  setTipo(novoTipoObjeto.id);
+
+  setNovoTipo('');
+  setModalTipoVisible(false);
+};
 
   // Função para submeter o formulário de cadastro de despesa
+
   const handleSubmit = async () => {
-    if (!categoria || !tipo || !dataVencimento || !dataPagamento || !valor) {
+    if (!categoria || !tipo || !dataVencimento || !dataPagamento || !valor || !descricao) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos.');
       return;
     }
-
+  
     try {
       const token = await getToken();
+  
+      // Dados para envio ao backend
       const data = {
-        description: descricao,
-        amount: valor,
+        description: tipo, // Enviando 'tipo' como 'description'
+        amount: parseFloat(valor), // Convertendo valor para número
         due_date: dataVencimento,
-        category_id: categoria,
-        payment_date: dataPagamento || null,
+        category_id: categoria, // Alinhado com o backend
+        observation: descricao, // Incluindo descrição no backend
       };
-
-      await axios.post('http://192.168.0.23:3333/expense', data, {
-        headers: { Authorization: `Bearer ${token}` }
+  
+      console.log('Dados a serem enviados:', data);
+  
+      // Corrigindo o acesso à resposta
+      const response = await axios.post('http://192.168.0.23:3333/expense', data, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
+  
+      console.log('Resposta do backend:', response.data);
+  
       Alert.alert('Sucesso', 'Despesa cadastrada com sucesso!');
       // Limpar os campos após o cadastro
       setCategoria('');
@@ -111,7 +124,7 @@ export default function CadastroDespesas() {
       setValor('');
       setDescricao('');
     } catch (error) {
-      console.error('Erro ao cadastrar despesa:', error);
+      console.error('Erro ao cadastrar despesa:', error.response?.data || error.message);
       Alert.alert('Erro', 'Não foi possível cadastrar a despesa. Tente novamente.');
     }
   };
@@ -163,7 +176,7 @@ export default function CadastroDespesas() {
             >
               <Picker.Item label="Selecione o Tipo de Despesa" value="" />
               {tipoOptions.map((tipoOption, index) => (
-                <Picker.Item key={index} label={tipoOption} value={tipoOption} />
+             <Picker.Item key={tipoOption.id} label={tipoOption.description} value={tipoOption.description} />
               ))}
             </Picker>
           </View>

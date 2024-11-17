@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, Platform, Alert } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 
@@ -9,26 +9,34 @@ export default function ConsultarDespesas() {
   const [despesas, setDespesas] = useState([]);
   const [showDatePicker, setShowDatePicker] = useState({ start: false, end: false });
 
+  // UseEffect para buscar as despesas quando as datas são selecionadas
   useEffect(() => {
     if (startDate && endDate) {
       fetchDespesas();
     }
   }, [startDate, endDate]);
 
+  // Função para buscar as despesas no backend
   const fetchDespesas = async () => {
     try {
-      const response = await axios.get(`https://seu-backend.com/despesas`, {
+      const formattedStartDate = new Date(startDate).toISOString().split('T')[0];
+      const formattedEndDate = new Date(endDate).toISOString().split('T')[0];
+
+      const response = await axios.get('http://192.168.0.23:3333/expenses', {
         params: {
-          startDate,
-          endDate
+          startDate: formattedStartDate,
+          endDate: formattedEndDate
         }
       });
-      setDespesas(response.data);
+
+      setDespesas(response.data); // Atualiza o estado com as despesas recebidas
     } catch (error) {
       console.error('Erro ao buscar despesas:', error);
+      Alert.alert('Erro', 'Não foi possível carregar as despesas.');
     }
   };
 
+  // Função para tratar a consulta de despesas, com validação do intervalo de datas
   const handleConsultar = () => {
     if (startDate && endDate) {
       const start = new Date(startDate);
@@ -36,20 +44,22 @@ export default function ConsultarDespesas() {
       const sixMonthsLater = new Date(start);
       sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
 
+      // Verifica se o intervalo de datas é maior que 6 meses
       if (end > sixMonthsLater) {
-        alert('O intervalo de consulta não pode exceder 6 meses.');
+        Alert.alert('Erro', 'O intervalo de consulta não pode exceder 6 meses.');
       } else {
         fetchDespesas();
       }
     } else {
-      alert('Por favor, selecione as datas de início e término.');
+      Alert.alert('Erro', 'Por favor, selecione as datas de início e término.');
     }
   };
 
+  // Função para lidar com a mudança de data no DateTimePicker
   const onDateChange = (event, selectedDate, dateType) => {
     const currentDate = selectedDate || new Date();
     setShowDatePicker({ ...showDatePicker, [dateType]: Platform.OS === 'ios' });
-    
+
     if (dateType === 'start') {
       setStartDate(currentDate.toISOString().split('T')[0]);
     } else {
@@ -62,6 +72,7 @@ export default function ConsultarDespesas() {
       <View style={styles.content}>
         <Text style={styles.subtitle}>Consulte suas Despesas Cadastradas</Text>
 
+        {/* Seção de Seleção de Datas */}
         <View style={styles.inputContainer}>
           <TouchableOpacity onPress={() => setShowDatePicker({ ...showDatePicker, start: true })} style={styles.input}>
             <Text style={styles.inputText}>{startDate || 'Digite a Data de Início'}</Text>
@@ -90,10 +101,12 @@ export default function ConsultarDespesas() {
           )}
         </View>
 
+        {/* Botão para consultar as despesas */}
         <TouchableOpacity style={styles.consultarButton} onPress={handleConsultar}>
           <Text style={styles.consultarButtonText}>Consultar</Text>
         </TouchableOpacity>
 
+        {/* Exibe as despesas ou uma mensagem caso não haja resultados */}
         <FlatList
           data={despesas}
           keyExtractor={(item) => item.id.toString()}
