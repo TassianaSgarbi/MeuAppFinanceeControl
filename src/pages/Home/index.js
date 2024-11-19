@@ -143,8 +143,18 @@ export default function Home() {
             >
               <Text style={styles.menuItemText}>Alterar Dados</Text>
             </TouchableOpacity>
-
+           
             <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                closeMenu();
+                navigation.navigate('Chatbot'); // Navega para Chatbot
+              }}
+            >
+              <Text style={styles.menuItemText}>Chatbot</Text>
+            </TouchableOpacity>
+           
+          <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
                 closeMenu();
@@ -158,6 +168,8 @@ export default function Home() {
               style={styles.closeButton}
               onPress={closeMenu}
             >
+          
+
               <Text style={styles.closeButtonText}>Fechar</Text>
             </TouchableOpacity>
           </Animated.View>
