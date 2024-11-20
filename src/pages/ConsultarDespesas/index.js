@@ -1,134 +1,135 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, Platform, Alert } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, Alert } from 'react-native';
 import axios from 'axios';
 
 export default function ConsultarDespesas() {
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
   const [despesas, setDespesas] = useState([]);
-  const [showDatePicker, setShowDatePicker] = useState({ start: false, end: false });
+  const [categorias, setCategorias] = useState([]); // Estado para armazenar as categorias
 
-  // UseEffect para buscar as despesas quando as datas são selecionadas
+  // UseEffect para buscar despesas e categorias
   useEffect(() => {
-    if (startDate && endDate) {
-      fetchDespesas();
-    }
-  }, [startDate, endDate]);
+    fetchDespesas();
+    fetchCategorias();
+  }, []);
 
-  // Função para buscar as despesas no backend
+  // Função para buscar todas as despesas no backend
   const fetchDespesas = async () => {
     try {
-      const formattedStartDate = new Date(startDate).toISOString().split('T')[0];
-      const formattedEndDate = new Date(endDate).toISOString().split('T')[0];
-
-      const response = await axios.get('http://192.168.0.23:3333/expenses', {
-        params: {
-          startDate: formattedStartDate,
-          endDate: formattedEndDate
-        }
-      });
-
-      setDespesas(response.data); // Atualiza o estado com as despesas recebidas
+      const response = await axios.get('http://192.168.0.23:3333/expenses');
+      setDespesas(response.data); // Atualiza o estado com todas as despesas
     } catch (error) {
       console.error('Erro ao buscar despesas:', error);
       Alert.alert('Erro', 'Não foi possível carregar as despesas.');
     }
   };
 
-  // Função para tratar a consulta de despesas, com validação do intervalo de datas
-  const handleConsultar = () => {
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      const sixMonthsLater = new Date(start);
-      sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
-
-      // Verifica se o intervalo de datas é maior que 6 meses
-      if (end > sixMonthsLater) {
-        Alert.alert('Erro', 'O intervalo de consulta não pode exceder 6 meses.');
-      } else {
-        fetchDespesas();
-      }
-    } else {
-      Alert.alert('Erro', 'Por favor, selecione as datas de início e término.');
+  // Função para buscar as categorias no backend
+  const fetchCategorias = async () => {
+    try {
+      const response = await axios.get('http://192.168.0.23:3333/categories');
+      setCategorias(response.data); // Atualiza o estado com as categorias
+    } catch (error) {
+      console.error('Erro ao buscar categorias:', error);
+      Alert.alert('Erro', 'Não foi possível carregar as categorias.');
     }
   };
 
-  // Função para lidar com a mudança de data no DateTimePicker
-  const onDateChange = (event, selectedDate, dateType) => {
-    const currentDate = selectedDate || new Date();
-    setShowDatePicker({ ...showDatePicker, [dateType]: Platform.OS === 'ios' });
+  // Função para encontrar o nome da categoria pelo ID
+  const getCategoriaNome = (categoryId) => {
+    const categoria = categorias.find(cat => cat.id === categoryId);
+    return categoria ? categoria.name : 'Categoria não encontrada'; // Retorna o nome da categoria ou um valor padrão
+  };
 
-    if (dateType === 'start') {
-      setStartDate(currentDate.toISOString().split('T')[0]);
-    } else {
-      setEndDate(currentDate.toISOString().split('T')[0]);
+  // Função para lidar com o pagamento
+  const handlePagar = (id) => {
+    Alert.alert(
+      'Confirmar Pagamento',
+      'Tem certeza que deseja marcar essa despesa como paga?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Pagar', onPress: () => pagarDespesa(id) },
+      ]
+    );
+  };
+
+  // Função para pagar a despesa
+  const pagarDespesa = async (id) => {
+    try {
+      // Envia a solicitação para o backend para marcar a despesa como paga
+      await axios.put(`http://192.168.0.23:3333/expense/status?expense_id=${id}`);
+  
+      // Atualiza o estado local, alterando o status da despesa para "Pago"
+      setDespesas((prevDespesas) => 
+        prevDespesas.map((despesa) =>
+          despesa.id === id ? { ...despesa, status: true } : despesa
+        )
+      );
+  
+      Alert.alert('Sucesso', 'Despesa marcada como paga!');
+    } catch (error) {
+      console.error('Erro ao pagar despesa:', error);
+      Alert.alert('Erro', 'Não foi possível marcar a despesa como paga.');
+    }
+  };
+
+  // Função para lidar com a exclusão
+  const handleExcluir = (id) => {
+    Alert.alert(
+      'Confirmar Exclusão',
+      'Tem certeza que deseja excluir essa despesa?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Excluir', onPress: () => excluirDespesa(id) },
+      ]
+    );
+  };
+
+  // Função para excluir a despesa
+  const excluirDespesa = async (id) => {
+    try {
+      await axios.delete(`http://192.168.0.23:3333/delete-expense?expense_id=${id}`);
+      fetchDespesas(); // Atualiza a lista de despesas após exclusão
+      Alert.alert('Sucesso', 'Despesa excluída com sucesso!');
+    } catch (error) {
+      console.error('Erro ao excluir despesa:', error);
+      Alert.alert('Erro', 'Não foi possível excluir a despesa.');
     }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.subtitle}>Consulte suas Despesas Cadastradas</Text>
-
-        {/* Seção de Seleção de Datas */}
-        <View style={styles.inputContainer}>
-          <TouchableOpacity onPress={() => setShowDatePicker({ ...showDatePicker, start: true })} style={styles.input}>
-            <Text style={styles.inputText}>{startDate || 'Digite a Data de Início'}</Text>
-          </TouchableOpacity>
-          {showDatePicker.start && (
-            <DateTimePicker
-              testID="dateTimePickerStart"
-              value={new Date()}
-              mode="date"
-              display="default"
-              onChange={(event, selectedDate) => onDateChange(event, selectedDate, 'start')}
-            />
-          )}
-
-          <TouchableOpacity onPress={() => setShowDatePicker({ ...showDatePicker, end: true })} style={styles.input}>
-            <Text style={styles.inputText}>{endDate || 'Digite a Data de Término'}</Text>
-          </TouchableOpacity>
-          {showDatePicker.end && (
-            <DateTimePicker
-              testID="dateTimePickerEnd"
-              value={new Date()}
-              mode="date"
-              display="default"
-              onChange={(event, selectedDate) => onDateChange(event, selectedDate, 'end')}
-            />
-          )}
-        </View>
-
-        {/* Botão para consultar as despesas */}
-        <TouchableOpacity style={styles.consultarButton} onPress={handleConsultar}>
-          <Text style={styles.consultarButtonText}>Consultar</Text>
-        </TouchableOpacity>
+        <Text style={styles.subtitle}>Consulte suas Despesas Cadastradas!</Text>
 
         {/* Exibe as despesas ou uma mensagem caso não haja resultados */}
         <FlatList
           data={despesas}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={styles.despesaContainer}>
-              <Text style={styles.despesaText}>Categoria: {item.categoria}</Text>
-              <Text style={styles.despesaText}>Tipo: {item.tipo}</Text>
-              <Text style={styles.despesaText}>Data de Vencimento: {item.dataVencimento}</Text>
-              <Text style={styles.despesaText}>Data de Pagamento: {item.dataPagamento || 'Não pago'}</Text>
-              <Text style={styles.despesaText}>Valor: {item.valor}</Text>
-              <Text style={styles.despesaText}>Descrição: {item.descricao}</Text>
+              <Text style={styles.despesaText}>Descrição: {item.description}</Text>
+              <Text style={styles.despesaText}>Valor: R$ {item.amount}</Text>
+              <Text style={styles.despesaText}>Status: {item.status ? 'Pago' : 'Não Pago'}</Text>
+              <Text style={styles.despesaText}>Categoria: {getCategoriaNome(item.categoryId)}</Text> {/* Exibe a categoria */}
+
+              {/* Botões de Pagar e Excluir */}
               <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.button} onPress={() => handleEditar(item.id)}>
-                  <Text style={styles.buttonText}>Editar</Text>
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={() => handlePagar(item.id)}
+                >
+                  <Text style={styles.buttonText}>Pagar</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={() => handleExcluir(item.id)}>
+                <TouchableOpacity
+                  style={[styles.button, styles.secondaryButton]}
+                  onPress={() => handleExcluir(item.id)}
+                >
                   <Text style={styles.buttonText}>Excluir</Text>
                 </TouchableOpacity>
               </View>
             </View>
           )}
-          ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma despesa encontrada.</Text>}
+          ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma despesa encontrada.</Text>} // Certifique-se de que a string está dentro de <Text>
         />
       </View>
     </View>
@@ -147,40 +148,9 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#888',
+    color: '#333',
     marginBottom: 20,
     textAlign: 'center',
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  input: {
-    height: 50,
-    width: '100%',
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    backgroundColor: 'white',
-    color: '#333',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  inputText: {
-    color: '#333',
-  },
-  consultarButton: {
-    backgroundColor: '#007BFF',
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  consultarButtonText: {
-    color: '#fff',
-    fontSize: 16,
   },
   despesaContainer: {
     padding: 15,

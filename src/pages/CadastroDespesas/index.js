@@ -223,7 +223,7 @@ export default function CadastroDespesas() {
             </TouchableOpacity>
           </View>
 
-          {/* Data de Pagamento */}
+          {/* Data de Pagamento (inativo, não obrigatório) */}
           <View style={styles.inputContainer}>
             <TouchableOpacity onPress={() => abrirDatePicker('pagamento')}>
               <TextInput
@@ -237,6 +237,7 @@ export default function CadastroDespesas() {
             </TouchableOpacity>
           </View>
 
+          
           {/* Valor */}
           <View style={styles.inputContainer}>
             <TextInput

@@ -170,7 +170,7 @@ export default function CadastroCategoria() {
       Alert.alert('Sucesso', 'Categoria excluída com sucesso!');
     } catch (error) {
       console.error('Erro ao excluir categoria:', error);
-      Alert.alert('Erro', 'Não foi possível excluir a categoria.');
+      Alert.alert('Erro', 'Não foi possível excluir a categoria, existe despesa cadastrada.');
     }
   };
   const handleCategoriaSelect = (categoriaSelecionada) => {
@@ -398,6 +398,7 @@ const styles = StyleSheet.create({
   },
   flatListContent: {
     maxHeight: 300, // Defina uma altura máxima para a lista de categorias
-    paddingBottom: 20, // Espaço extra para rolagem
+    paddingBottom: 20, // Espaço extra para 
+    flexDirection: 'row',
   },
 });

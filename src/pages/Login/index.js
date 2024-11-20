@@ -40,6 +40,14 @@ export default function Login({ navigation }) {
     }
   };
 
+  // Função para exibir o alerta de recuperação de senha
+  const handleRecuperarSenha = () => {
+    Alert.alert(
+      'Recuperação de Senha',
+      'Envie um e-mail para suporteti@financeecontrol.com.br e receba link de recuperação de senha!'
+    );
+  };
+
   return (
     <View style={styles.container}>
       <TextInput
@@ -63,9 +71,15 @@ export default function Login({ navigation }) {
       <TouchableOpacity onPress={() => navigation.navigate('CadastroUsuario')}>
         <Text style={styles.cadastroText}>Cadastra-se</Text>
       </TouchableOpacity>
+
+      {/* Adiciona o botão de Recuperar Senha */}
+      <TouchableOpacity onPress={handleRecuperarSenha}>
+        <Text style={styles.recuperarSenhaText}>Recuperar Senha</Text>
+      </TouchableOpacity>
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -87,4 +101,9 @@ const styles = StyleSheet.create({
     color: 'blue',
     textAlign: 'center',
   },
- });
+  recuperarSenhaText: {
+    marginTop: 10,
+    color: 'blue',
+    textAlign: 'center',
+  },
+});
