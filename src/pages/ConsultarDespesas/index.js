@@ -110,7 +110,8 @@ export default function ConsultarDespesas() {
               <Text style={styles.despesaText}>Descrição: {item.description}</Text>
               <Text style={styles.despesaText}>Valor: R$ {item.amount}</Text>
               <Text style={styles.despesaText}>Status: {item.status ? 'Pago' : 'Não Pago'}</Text>
-              <Text style={styles.despesaText}>Categoria: {getCategoriaNome(item.categoryId)}</Text> {/* Exibe a categoria */}
+              <Text style={styles.despesaText}>Categoria: {getCategoriaNome(item.categoryId)}</Text>
+
 
               {/* Botões de Pagar e Excluir */}
               <View style={styles.buttonContainer}>
@@ -129,8 +130,7 @@ export default function ConsultarDespesas() {
               </View>
             </View>
           )}
-          ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma despesa encontrada.</Text>} // Certifique-se de que a string está dentro de <Text>
-        />
+          ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma despesa encontrada.</Text>}/>
       </View>
     </View>
   );

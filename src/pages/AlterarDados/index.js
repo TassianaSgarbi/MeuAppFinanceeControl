@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import axios from 'axios';  // Importando o axios
-import { jwt_decode } from 'jwt-decode';  // Importa como named export
-import AsyncStorage from '@react-native-async-storage/async-storage';  // Importação correta
-
+import { Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import axios from 'axios'; // Importando o axios
+import {jwtDecode} from 'jwt-decode'; // Importação correta do jwt-decode
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Importação correta
 
 export default function AlterarDados() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');  // Adicionando o estado para mensagem de erro
+  const [errorMessage, setErrorMessage] = useState(''); // Estado para mensagem de erro
 
   const handleUpdate = async () => {
     try {
-      // Recupera o token JWT do armazenamento (exemplo com AsyncStorage)
+      // Recupera o token JWT do armazenamento
       const token = await AsyncStorage.getItem('authToken');
 
       if (!token) {
@@ -21,28 +19,37 @@ export default function AlterarDados() {
       }
 
       // Decodifica o token para obter o userId
-      const decodedToken = jwt_decode(token);
-      const userId = decodedToken.userId;  // O userId deve estar no payload do token
+      const decodedToken = jwtDecode(token);
+      const user_id = decodedToken?.sub || decodedToken?.user_id; // Ajuste baseado na estrutura real do token
 
-      if (!userId) {
+      if (!user_id) {
         throw new Error('User ID não encontrado no token');
       }
+
+      // Construir o payload de forma condicional
+      const payload = { user_id }; // Incluindo o ID do usuário
+      if (name.trim()) payload.new_name = name;
+      if (email.trim()) payload.new_email = email;
+
+      // Verifica se pelo menos um campo foi preenchido
+      if (!payload.new_name && !payload.new_email) {
+        setErrorMessage('Preencha pelo menos um campo para atualizar.');
+        return;
+      }
+
       // Enviar a requisição PUT para o backend
-      const response = await axios.put('http://192.168.0.23:3333/user/edit', // Altere para o endereço correto do seu backend
-        {
-          user_id: userId,  // Passando o ID do usuário
-          new_name: name,
-          new_email: email,
-          new_password: newPassword
-        },
+      const response = await axios.put(
+        'http://192.168.0.23:3333/user/edit', // Altere para o endereço correto do seu backend
+        payload,
         {
           headers: {
             Authorization: `Bearer ${token}`, // Passando o token JWT no cabeçalho
           },
         }
       );
+
       console.log('Dados atualizados com sucesso:', response.data);
-      // Exibir uma mensagem de sucesso ou redirecionar o usuário para outra tela
+      Alert.alert('Sucesso', 'Dados Atualizados com Sucesso!'); // Exibe o alerta de sucesso
     } catch (error) {
       console.error('Erro ao atualizar os dados:', error.response?.data?.message || error.message);
       setErrorMessage(error.response?.data?.message || 'Erro ao atualizar os dados');
@@ -50,84 +57,65 @@ export default function AlterarDados() {
   };
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      showsVerticalScrollIndicator={true} // Mostrar a barra de rolagem vertical
-    >
-      <View style={styles.content}>
-        <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="Nome Completo"
-            value={name}
-            onChangeText={setName}
-            placeholderTextColor="#888"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="E-mail"
-            value={email}
-            onChangeText={setEmail}
-            placeholderTextColor="#888"
-            keyboardType="email-address"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Nova Senha"
-            value={newPassword}
-            onChangeText={setNewPassword}
-            placeholderTextColor="#888"
-            secureTextEntry
-          />
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Preencha os campos abaixo para cadastrar uma categoria!</Text>
+      {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
 
-          {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+      <TextInput
+        style={styles.input}
+        placeholder="Novo Nome"
+        value={name}
+        onChangeText={setName}
+      />
 
+      <TextInput
+        style={styles.input}
+        placeholder="Novo Email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+      />
 
-          <TouchableOpacity style={styles.button} onPress={handleUpdate}>
-            <Text style={styles.buttonText}>Salvar Alterações</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <TouchableOpacity style={styles.button} onPress={handleUpdate}>
+        <Text style={styles.buttonText}>Atualizar Dados</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1, // Permite que o ScrollView expanda para preencher o conteúdo
-    backgroundColor: 'white', // Fundo branco para o container
-    paddingHorizontal: 20, // Adiciona um espaçamento horizontal no container
-    paddingVertical: 20, // Adiciona espaçamento vertical para evitar que o conteúdo fique colado nas bordas
-  },
-  content: {
-    flex: 1,
-    alignItems: 'stretch', // Faz com que o conteúdo se estique para ocupar toda a largura
-  },
-  form: {
-    flexGrow: 1, // Permite que o formulário expanda conforme necessário
-  },
-  input: {
-    height: 50,
-    width: '100%', // Ajusta a largura para ocupar a tela toda
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 10,
-    marginBottom: 15, // Espaçamento inferior
-    paddingHorizontal: 15,
+    flexGrow: 1,
+    padding: 20,
     backgroundColor: 'white',
+  },
+  title: {
+    fontSize: 18,
+    marginBottom: 20,
+    textAlign: 'center',
     color: '#333',
   },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 15,
+    textAlign: 'center'
+  },
   button: {
-    backgroundColor: '#007BFF', // Cor azul do botão
-    borderRadius: 10,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    marginTop: 20,
+    backgroundColor: '#007BFF',
+    padding: 15,
+    borderRadius: 5,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    textAlign: 'center',
+    fontSize: 16,
+  },
+  error: {
+    color: 'red',
+    marginBottom: 10,
+    textAlign: 'center',
   },
 });
