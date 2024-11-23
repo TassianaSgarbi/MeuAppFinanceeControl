@@ -10,7 +10,6 @@ export default function CadastroDespesas() {
   const [categoria, setCategoria] = useState('');
   const [tipo, setTipo] = useState('');
   const [dataVencimento, setDataVencimento] = useState('');
-  const [dataPagamento, setDataPagamento] = useState('');
   const [valor, setValor] = useState('');
   const [descricao, setDescricao] = useState('');
 
@@ -89,7 +88,7 @@ export default function CadastroDespesas() {
   // Função para submeter o formulário de cadastro de despesa
 
   const handleSubmit = async () => {
-    if (!categoria || !tipo || !dataVencimento || !dataPagamento || !valor || !descricao) {
+    if (!categoria || !tipo || !dataVencimento || !valor || !descricao) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos.');
       return;
     }
@@ -120,7 +119,6 @@ export default function CadastroDespesas() {
       setCategoria('');
       setTipo('');
       setDataVencimento('');
-      setDataPagamento('');
       setValor('');
       setDescricao('');
     } catch (error) {
@@ -134,9 +132,7 @@ export default function CadastroDespesas() {
     const dataFormatada = date.toISOString().split('T')[0]; // Formato "YYYY-MM-DD"
     if (campoDataAtual === 'vencimento') {
       setDataVencimento(dataFormatada);
-    } else if (campoDataAtual === 'pagamento') {
-      setDataPagamento(dataFormatada);
-    }
+    } 
     setDatePickerVisible(false);
     setCampoDataAtual(null);
   };
@@ -223,21 +219,7 @@ export default function CadastroDespesas() {
             </TouchableOpacity>
           </View>
 
-          {/* Data de Pagamento (inativo, não obrigatório) */}
-          <View style={styles.inputContainer}>
-            <TouchableOpacity onPress={() => abrirDatePicker('pagamento')}>
-              <TextInput
-                style={styles.input}
-                placeholder="Data de Pagamento"
-                value={dataPagamento}
-                editable={false}
-                placeholderTextColor="#888"
-                textAlign="center"
-              />
-            </TouchableOpacity>
-          </View>
-
-          
+                
           {/* Valor */}
           <View style={styles.inputContainer}>
             <TextInput

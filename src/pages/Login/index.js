@@ -87,6 +87,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     width: '100%',
     backgroundColor: 'white',
+    textAlign: 'center',
   },
   input: {
     height: 40,
