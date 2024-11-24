@@ -7,7 +7,8 @@ import CadastroCategoria from '../pages/CadastroCategoria';
 import CadastroDespesas from '../pages/CadastroDespesas';
 import ConsultarDespesas from '../pages/ConsultarDespesas';
 import AlterarDados from '../pages/AlterarDados';
-import Chatbot from '../pages/Chatbot/Chatbot'; // Importação do Chatbot
+import Chatbot from '../pages/Chatbot/Chatbot'; 
+import DeletarUsuario from '../pages/DeletarUsuario';
 
 
 const Stack = createStackNavigator();
@@ -31,6 +32,7 @@ const AppNavigator = () => {
       <Stack.Screen name="ConsultarDespesas" component={ConsultarDespesas} />
       <Stack.Screen name="AlterarDados" component={AlterarDados} />
       <Stack.Screen name="Chatbot" component={Chatbot} />
+      <Stack.Screen name="DeletarUsuario" component={DeletarUsuario} />
      </Stack.Navigator>
   );
 };

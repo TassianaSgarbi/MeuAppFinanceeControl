@@ -153,6 +153,16 @@ export default function Home() {
             >
               <Text style={styles.menuItemText}>Chatbot</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                closeMenu();
+                navigation.navigate('DeletarUsuario'); // Navega para Deletar Usuario
+              }}
+            >
+              <Text style={styles.menuItemText}>Deletar Usuario</Text>
+            </TouchableOpacity>
            
           <TouchableOpacity
               style={styles.menuItem}
@@ -262,7 +272,7 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     width: menuWidth,
-    height: '50%',
+    height: '60%',
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     padding: 20,
     justifyContent: 'center',

@@ -56,9 +56,9 @@ export default function AlterarDados() {
     }
   };
 
-  return (
+    return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Preencha os campos abaixo para cadastrar uma categoria!</Text>
+      <Text style={styles.title}>Preencha os campos abaixo para atualizar seus dados!</Text>
       {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
 
       <TextInput
@@ -107,6 +107,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#007BFF',
     padding: 15,
     borderRadius: 5,
+    marginBottom: 10,
   },
   buttonText: {
     color: '#fff',

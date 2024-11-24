@@ -48,19 +48,27 @@ export default function CadastroDespesas() {
     }
   };
 
-  // Função para buscar tipos de despesa do backend
-  const fetchTiposDespesas = async () => {
-    try {
-      const token = await getToken();
-      const response = await axios.get('http://192.168.0.23:3333/expenses', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setTipoOptions(response.data);
-    } catch (error) {
-      console.error('Erro ao buscar tipos de despesa:', error);
-      Alert.alert('Erro', 'Não foi possível carregar os tipos de despesa. Tente novamente.');
-    }
-  };
+ // Função para buscar tipos de despesa do backend
+const fetchTiposDespesas = async () => {
+  try {
+    const token = await getToken();
+    const response = await axios.get('http://192.168.0.23:3333/expenses', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    // Remover duplicatas, mantendo apenas um nome de despesa único
+    const despesasUnicas = response.data.filter((value, index, self) =>
+      index === self.findIndex((t) => (
+        t.description === value.description // Garante que o nome da despesa seja único
+      ))
+    );
+
+    setTipoOptions(despesasUnicas); // Atualiza o estado com as despesas filtradas sem duplicatas
+  } catch (error) {
+    console.error('Erro ao buscar tipos de despesa:', error);
+    Alert.alert('Erro', 'Não foi possível carregar os tipos de despesa. Tente novamente.');
+  }
+};
 
   // useEffect para buscar categorias e tipos ao montar o componente
   useEffect(() => {

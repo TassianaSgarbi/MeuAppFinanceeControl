@@ -62,6 +62,7 @@ export default function CadastroUsuario() {
       Alert.alert('Cadastro bem-sucedido', 'Usuário Cadastrado com Sucesso!');
     } catch (error) {
       console.error('Erro ao cadastrar usuário', error.response?.data || error.message);
+      Alert.alert('Usuário já existe!');
     }
   };
 

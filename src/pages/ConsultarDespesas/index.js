@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, Alert, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, Alert, Modal, TextInput } from 'react-native';
 import axios from 'axios';
 import { Picker } from '@react-native-picker/picker';
 
@@ -11,6 +11,7 @@ export default function ConsultarDespesas() {
   const [selectedDespesa, setSelectedDespesa] = useState(null); // Estado para a despesa selecionada
   const [showModalCategoria, setShowModalCategoria] = useState(false); // Controle do modal de categoria
   const [showModalDespesa, setShowModalDespesa] = useState(false); // Controle do modal de despesa
+  const [paymentDate, setPaymentDate] = useState(''); // Estado para a data de pagamento
 
   // UseEffect para buscar despesas e categorias
   useEffect(() => {
@@ -50,90 +51,92 @@ export default function ConsultarDespesas() {
   // Função para filtrar despesas por categoria
   const filtrarPorCategoria = () => {
     if (selectedCategory === 'todas') {
-      // Se a categoria selecionada for "todas", exibe todas as despesas
       setDespesasFiltradas(despesas);
     } else {
-      // Filtra as despesas com base na categoria selecionada
       const despesasFiltradas = despesas.filter(despesa => despesa.categoryId === selectedCategory);
-      setDespesasFiltradas(despesasFiltradas); // Atualiza as despesas filtradas
+      setDespesasFiltradas(despesasFiltradas);
     }
-    setShowModalCategoria(false); // Fecha o modal após a seleção
+    setShowModalCategoria(false);
   };
 
   // Função para filtrar despesas por nome
+
   const filtrarPorDespesa = () => {
-    if (!selectedDespesa === 'null') {
+    if (selectedDespesa === 'todas' || selectedDespesa === null) {
       // Se nenhuma despesa for selecionada, exibe todas as despesas
       setDespesasFiltradas(despesas);
     } else {
-      // Filtra todas as despesas com a mesma descrição
-      const despesasFiltradas = despesas.filter(despesa => despesa.description === selectedDespesa);
+      // Filtra as despesas pela descrição da despesa
+      const despesasFiltradas = despesas.filter(despesa => despesa.description === selectedDespesa.description);
       setDespesasFiltradas(despesasFiltradas); // Atualiza as despesas filtradas
     }
     setShowModalDespesa(false); // Fecha o modal após a seleção
   };
 
-  
- // Função para lidar com o pagamento
- const handlePagar = (id) => {
-  Alert.alert(
-    'Confirmar Pagamento',
-    'Tem certeza que deseja marcar essa despesa como paga?',
-    [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Pagar', onPress: () => pagarDespesa(id) },
-    ]
-  );
-};
+  // Função para lidar com o pagamento
+  const handlePagar = (id) => {
+    if (!paymentDate) {
+      Alert.alert('Erro', 'Por favor, insira a data de pagamento');
+      return;
+    }
 
-// Função para pagar a despesa
-const pagarDespesa = async (id) => {
-  try {
-    // Envia a solicitação para o backend para marcar a despesa como paga
-    await axios.put(`http://192.168.0.23:3333/expense/status?expense_id=${id}`);
-
-    // Atualiza o estado local, alterando o status da despesa para "Pago"
-    setDespesas((prevDespesas) => 
-      prevDespesas.map((despesa) =>
-        despesa.id === id ? { ...despesa, status: true } : despesa
-      )
+    Alert.alert(
+      'Confirmar Pagamento',
+      'Tem certeza que deseja marcar essa despesa como paga?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Pagar', onPress: () => pagarDespesa(id) },
+      ]
     );
+  };
 
-    Alert.alert('Sucesso', 'Despesa marcada como paga!');
-  } catch (error) {
-    console.error('Erro ao pagar despesa:', error);
-    Alert.alert('Erro', 'Não foi possível marcar a despesa como paga.');
-  }
-};
+  // Função para pagar a despesa
+  const pagarDespesa = async (id) => {
+    try {
+      // Envia a solicitação para o backend, incluindo a data de pagamento
+      await axios.put('http://192.168.0.23:3333/expense/status?expense_id=${id}');
 
-// Função para lidar com a exclusão
-const handleExcluir = (id) => {
-  Alert.alert(
-    'Confirmar Exclusão',
-    'Tem certeza que deseja excluir essa despesa?',
-    [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Excluir', onPress: () => excluirDespesa(id) },
-    ]
-  );
-};
+      setDespesas((prevDespesas) =>
+        prevDespesas.map((despesa) =>
+          despesa.id === id ? { ...despesa, status: true, payment_date: paymentDate } : despesa
+        )
+      );
 
-// Função para excluir a despesa
-const excluirDespesa = async (id) => {
-  try {
-    await axios.delete(`http://192.168.0.23:3333/delete-expense?expense_id=${id}`);
-    fetchDespesas(); // Atualiza a lista de despesas após exclusão
-    Alert.alert('Sucesso', 'Despesa excluída com sucesso!');
-  } catch (error) {
-    console.error('Erro ao excluir despesa:', error);
-    Alert.alert('Erro', 'Não foi possível excluir a despesa.');
-  }
-};
+      Alert.alert('Sucesso', 'Despesa marcada como paga!');
+      setPaymentDate(''); // Limpa o campo de data após o pagamento
+    } catch (error) {
+      console.error('Erro ao pagar despesa:', error);
+      Alert.alert('Erro', 'Não foi possível marcar a despesa como paga.');
+    }
+  };
 
-    return (
+  // Função para lidar com a exclusão
+  const handleExcluir = (id) => {
+    Alert.alert(
+      'Confirmar Exclusão',
+      'Tem certeza que deseja excluir essa despesa?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Excluir', onPress: () => excluirDespesa(id) },
+      ]
+    );
+  };
+
+  // Função para excluir a despesa
+  const excluirDespesa = async (id) => {
+    try {
+      await axios.delete(`http://192.168.0.23:3333/delete-expense?expense_id=${id}`);
+      fetchDespesas(); // Atualiza a lista de despesas após exclusão
+      Alert.alert('Sucesso', 'Despesa excluída com sucesso!');
+    } catch (error) {
+      console.error('Erro ao excluir despesa:', error);
+      Alert.alert('Erro', 'Não foi possível excluir a despesa.');
+    }
+  };
+
+  return (
     <View style={styles.container}>
       <View style={styles.header}>
-        {/* Botões de consulta */}
         <TouchableOpacity style={styles.filterButton} onPress={() => setShowModalCategoria(true)}>
           <Text style={styles.filterButtonText}>Consultar por Categoria</Text>
         </TouchableOpacity>
@@ -143,31 +146,31 @@ const excluirDespesa = async (id) => {
       </View>
 
       {/* Modal para selecionar categoria */}
-              <Modal
-          transparent={true}
-          animationType="slide"
-          visible={showModalCategoria}
-          onRequestClose={() => setShowModalCategoria(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Selecione uma Categoria</Text>
-              <Picker
-                selectedValue={selectedCategory}
-                onValueChange={(itemValue) => setSelectedCategory(itemValue)}
-                style={styles.picker}
-              >
-                <Picker.Item label="Selecione uma categoria" value="todas" />
-                {categorias.map((categoria) => (
-                  <Picker.Item key={categoria.id} label={categoria.name} value={categoria.id} />
-                ))}
-              </Picker>
-              <TouchableOpacity style={styles.button} onPress={filtrarPorCategoria}>
-                <Text style={styles.buttonText}>OK</Text>
-              </TouchableOpacity>
-            </View>
+      <Modal
+        transparent={true}
+        animationType="slide"
+        visible={showModalCategoria}
+        onRequestClose={() => setShowModalCategoria(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Selecione uma Categoria</Text>
+            <Picker
+              selectedValue={selectedCategory}
+              onValueChange={(itemValue) => setSelectedCategory(itemValue)}
+              style={styles.picker}
+            >
+              <Picker.Item label="Selecione uma categoria" value="todas" />
+              {categorias.map((categoria) => (
+                <Picker.Item key={categoria.id} label={categoria.name} value={categoria.id} />
+              ))}
+            </Picker>
+            <TouchableOpacity style={styles.button} onPress={filtrarPorCategoria}>
+              <Text style={styles.buttonText}>OK</Text>
+            </TouchableOpacity>
           </View>
-        </Modal>
+        </View>
+      </Modal>
 
       {/* Modal para selecionar despesa */}
       <Modal
@@ -179,21 +182,18 @@ const excluirDespesa = async (id) => {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Selecione uma Despesa</Text>
-            <Picker
-              selectedValue={selectedDespesa}
-              onValueChange={(itemValue) => setSelectedDespesa(itemValue)}
-              style={styles.picker}
-            >
-              <Picker.Item label="Selecione uma despesa"/>
-              {Array.from(new Set(despesas.map(item => item.description))) // Remove duplicatas de descrições
-                .map(description => (
-                  <Picker.Item 
-                    key={description} 
-                    label={description} 
-                    value={description} // Usando a descrição como valor
-                  />
-                ))}
-            </Picker>
+            <FlatList
+              data={despesas}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.despesaItem}
+                  onPress={() => setSelectedDespesa(item)}
+                >
+                  <Text style={styles.despesaItemText}>{item.description}</Text>
+                </TouchableOpacity>
+              )}
+            />
             <TouchableOpacity style={styles.button} onPress={filtrarPorDespesa}>
               <Text style={styles.buttonText}>OK</Text>
             </TouchableOpacity>
@@ -201,40 +201,49 @@ const excluirDespesa = async (id) => {
         </View>
       </Modal>
 
-      <View style={styles.content}>
-        <Text style={styles.subtitle}>Consulte suas Despesas Cadastradas!</Text>
 
-        {/* Exibe as despesas ou uma mensagem caso não haja resultados */}
-        <FlatList
-          data={despesasFiltradas}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <View style={styles.despesaContainer}>
-              <Text style={styles.despesaText}>Descrição: {item.description}</Text>
-              <Text style={styles.despesaText}>Valor: R$ {item.amount}</Text>
-              <Text style={styles.despesaText}>Status: {item.status ? 'Pago' : 'Não Pago'}</Text>
-              <Text style={styles.despesaText}>Categoria: {getCategoriaNome(item.categoryId)}</Text>
-
-              {/* Botões de Pagar e Excluir */}
-              <View style={styles.buttonContainer}>
+      {/* Exibe as despesas ou uma mensagem caso não haja resultados */}
+      <FlatList
+        data={despesasFiltradas}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.despesaContainer}>
+            <Text style={styles.despesaText}>Categoria: {getCategoriaNome(item.categoryId)}</Text>
+            <Text style={styles.despesaText}>Descrição: {item.description}</Text>
+            <Text style={styles.despesaText}>Valor: R$ {item.amount}</Text>
+            <Text style={styles.despesaText}>Data Vencimento: {item.due_date}</Text>
+            <Text style={styles.despesaText}>Status: {item.status ? 'Pago' : 'Não Pago'}</Text>
+            <Text style={styles.despesaText}>
+              Data Pagamento: {item.payment_date ||'' }
+            </Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Data de pagamento"
+              value={paymentDate}
+              onChangeText={setPaymentDate}
+              keyboardType="numeric"
+            />
+            <View style={styles.buttonContainer}>
+              {!item.status && (
                 <TouchableOpacity
                   style={styles.button}
                   onPress={() => handlePagar(item.id)}
                 >
-                  <Text style={styles.buttonText}>Pagar</Text>
+                  <Text style={styles.buttonText}>Marcar como Paga</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.button, styles.secondaryButton]}
-                  onPress={() => handleExcluir(item.id)}
-                >
-                  <Text style={styles.buttonText}>Excluir</Text>
-                </TouchableOpacity>
-              </View>
+              )}
+              <TouchableOpacity
+                style={styles.button2}
+                onPress={() => handleExcluir(item.id)}
+              >
+                <Text style={styles.buttonText2}>Excluir</Text>
+              </TouchableOpacity>
             </View>
-          )}
-          ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma despesa encontrada.</Text>}
-        />
-      </View>
+          </View>
+        )}
+
+        ListEmptyComponent={<Text>Não há despesas para exibir</Text>}
+      />
     </View>
   );
 }
@@ -242,118 +251,87 @@ const excluirDespesa = async (id) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 16,
     backgroundColor: 'white',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
   },
   filterButton: {
-    backgroundColor: '#007BFF',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    alignItems: 'center',
+    backgroundColor: '#0066CC',
+    padding: 10,
+    borderRadius: 5,
   },
   filterButtonText: {
     color: '#fff',
-    fontSize: 14,
   },
-  content: {
+  modalContainer: {
     flex: 1,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  despesaContainer: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-  },
-  despesaText: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 5,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-  },
-   secondaryButton: {
-      backgroundColor: '#DC3545',
-      paddingVertical: 12,
-      paddingHorizontal: 20,
-      borderRadius: 8,
-      alignItems: 'center',
-      justifyContent: 'center',
-      flex: 0,  // Garantindo que o botão Excluir ocupe o mesmo espaço
-      marginLeft: 10, 
-   },
-   button: {
-    backgroundColor: '#28A745',
-    paddingVertical: 12, // Aumentando o padding para garantir que o botão fique maior
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10, // Garantindo espaçamento do topo
-    flex: 0, // Evitar que o botão ocupe muito espaço
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-
-    buttonText: {
-      color: '#fff',
-      fontSize: 14,
-      textAlign: 'center',
-    },
-
-    modalContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: 'rgba(0, 0, 0, 0.5)', // Transparência
-      padding: 20, // Adicionando padding ao redor do modal
-    },
-
-
   modalContent: {
     backgroundColor: '#fff',
     padding: 20,
     borderRadius: 10,
-    width: '80%', // Ajuste o tamanho conforme necessário
-    maxHeight: '80%', // Evitar que o modal ocupe o espaço excessivo
-    justifyContent: 'space-between', // Para distribuir os elementos
-    flexDirection: 'column', // Garantir que os itens sejam empilhados verticalmente
+    width: '80%',
   },
-
   modalTitle: {
     fontSize: 18,
-    marginBottom: 15,
-    textAlign: 'center',
+    marginBottom: 10,
   },
   picker: {
-    height: 50,
     width: '100%',
-    marginBottom: 15, // Adicionando espaço entre o picker e o botão
+    height: 50,
+  },
+  button: {
+    backgroundColor: '#28a745',
+    padding: 10,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  button2: {
+    backgroundColor: '#FF0000', 
+    padding: 10,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  buttonText: {
+    color: '#fff',
+    textAlign: 'center',
+  },
+  buttonText2: {
+    color: '#fff',
+    textAlign: 'center',
+  },
+  despesaContainer: {
+    padding: 10,
+    marginBottom: 10,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 5,
+  },
+  despesaText: {
+    fontSize: 14,
+    marginVertical: 2,
+  },
+  input: {
+    borderColor: '#ddd',
+    borderWidth: 1,
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   despesaItem: {
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    padding: 10,
   },
   despesaItemText: {
     fontSize: 16,
-    color: '#333',
   },
-  emptyText: {
-    fontSize: 16,
-    textAlign: 'center',
-    color: '#888',
-  },
+ 
 });
