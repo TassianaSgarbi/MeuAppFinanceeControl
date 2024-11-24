@@ -62,17 +62,18 @@ export default function ConsultarDespesas() {
 
   // Função para filtrar despesas por nome
   const filtrarPorDespesa = () => {
-    if (!selectedDespesa === 'todas') {
+    if (!selectedDespesa === 'null') {
       // Se nenhuma despesa for selecionada, exibe todas as despesas
       setDespesasFiltradas(despesas);
     } else {
-      // Filtra a despesa selecionada
-      const despesasFiltradas = despesas.filter(despesa => despesa.id === selectedDespesa.id);
+      // Filtra todas as despesas com a mesma descrição
+      const despesasFiltradas = despesas.filter(despesa => despesa.description === selectedDespesa);
       setDespesasFiltradas(despesasFiltradas); // Atualiza as despesas filtradas
     }
     setShowModalDespesa(false); // Fecha o modal após a seleção
   };
 
+  
  // Função para lidar com o pagamento
  const handlePagar = (id) => {
   Alert.alert(
@@ -178,18 +179,21 @@ const excluirDespesa = async (id) => {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Selecione uma Despesa</Text>
-            <FlatList
-              data={despesas}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.despesaItem}
-                  onPress={() => setSelectedDespesa(item)}
-                >
-                  <Text style={styles.despesaItemText}>{item.description}</Text>
-                </TouchableOpacity>
-              )}
-            />
+            <Picker
+              selectedValue={selectedDespesa}
+              onValueChange={(itemValue) => setSelectedDespesa(itemValue)}
+              style={styles.picker}
+            >
+              <Picker.Item label="Selecione uma despesa"/>
+              {Array.from(new Set(despesas.map(item => item.description))) // Remove duplicatas de descrições
+                .map(description => (
+                  <Picker.Item 
+                    key={description} 
+                    label={description} 
+                    value={description} // Usando a descrição como valor
+                  />
+                ))}
+            </Picker>
             <TouchableOpacity style={styles.button} onPress={filtrarPorDespesa}>
               <Text style={styles.buttonText}>OK</Text>
             </TouchableOpacity>
