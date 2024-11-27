@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Modal, Animated, Dimensions, ScrollView, StyleSheet, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ const menuWidth = screenWidth * 0.5; // Largura do menu é metade da tela
 export default function Home() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuAnimation] = useState(new Animated.Value(-menuWidth)); // Animação de deslize
+  const [logoutTimer, setLogoutTimer] = useState(null); // Estado para o temporizador
   const navigation = useNavigation();
 
   const barData = {
@@ -92,10 +93,46 @@ export default function Home() {
     }
   };
 
+  // Função para reiniciar o temporizador
+  const resetLogoutTimer = () => {
+    // Limpar o temporizador anterior, se houver
+    if (logoutTimer) {
+      clearTimeout(logoutTimer);
+    }
+
+    // Iniciar um novo temporizador
+    const timer = setTimeout(() => {
+      Alert.alert(
+        'Sessão expirada',
+        'Você ficou inativo por muito tempo. Sua sessão será encerrada.',
+        [
+          {
+            text: 'OK',
+            onPress: () => logout(), // Chama o logout após 30 segundos de inatividade
+          },
+        ]
+      );
+    }, 30000); // 30 segundos de inatividade
+
+    setLogoutTimer(timer); // Salva o temporizador no estado
+  };
+
+  useEffect(() => {
+    // Inicializa o temporizador assim que o componente for montado
+    resetLogoutTimer();
+
+    // Limpar o temporizador quando o componente for desmontado
+    return () => {
+      if (logoutTimer) {
+        clearTimeout(logoutTimer);
+      }
+    };
+  }, []); // Executa apenas uma vez ao montar o componente
+
   return (
-    <View style={{ flex: 1 }}>
-      {/* HeaderGradient com Menu Feather */}
-      <View style={styles.headerGradient}>
+    <View style={{ flex: 1 }} onTouchStart={resetLogoutTimer}> 
+      
+        <View style={styles.headerGradient}>
         <TouchableOpacity onPress={openMenu}>
           <Feather name="menu" size={24} color="#fff" style={styles.menuIcon} />
         </TouchableOpacity>
@@ -104,6 +141,7 @@ export default function Home() {
       <Modal visible={menuVisible} transparent animationType="none">
         <TouchableOpacity style={styles.modalOverlay} onPress={closeMenu}>
           <Animated.View style={[styles.menuContainer, { transform: [{ translateX: menuAnimation }] }]}>
+
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
@@ -143,7 +181,7 @@ export default function Home() {
             >
               <Text style={styles.menuItemText}>Alterar Dados</Text>
             </TouchableOpacity>
-           
+
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
@@ -163,8 +201,8 @@ export default function Home() {
             >
               <Text style={styles.menuItemText}>Deletar Usuario</Text>
             </TouchableOpacity>
-           
-          <TouchableOpacity
+
+            <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
                 closeMenu();
@@ -178,8 +216,6 @@ export default function Home() {
               style={styles.closeButton}
               onPress={closeMenu}
             >
-          
-
               <Text style={styles.closeButtonText}>Fechar</Text>
             </TouchableOpacity>
           </Animated.View>
@@ -224,6 +260,8 @@ export default function Home() {
     </View>
   );
 }
+
+
 
 const chartConfig = {
   backgroundColor: '#fff',

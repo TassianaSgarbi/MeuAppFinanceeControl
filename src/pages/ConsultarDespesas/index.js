@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, FlatList, StyleSheet, Alert, Modal, TextI
 import axios from 'axios';
 import { Picker } from '@react-native-picker/picker';
 
+
 export default function ConsultarDespesas() {
   const [despesas, setDespesas] = useState([]); // Estado para todas as despesas
   const [despesasFiltradas, setDespesasFiltradas] = useState([]); // Estado para despesas filtradas
@@ -60,7 +61,6 @@ export default function ConsultarDespesas() {
   };
 
   // Função para filtrar despesas por nome
-
   const filtrarPorDespesa = () => {
     if (selectedDespesa === 'todas' || selectedDespesa === null) {
       // Se nenhuma despesa for selecionada, exibe todas as despesas
@@ -93,23 +93,43 @@ export default function ConsultarDespesas() {
   // Função para pagar a despesa
   const pagarDespesa = async (id) => {
     try {
-      // Envia a solicitação para o backend, incluindo a data de pagamento
-      await axios.put('http://192.168.0.23:3333/expense/status?expense_id=${id}');
-
+      // Verifica se a data de pagamento foi preenchida
+      if (!paymentDate) {
+        Alert.alert('Erro', 'Por favor, insira a data de pagamento');
+        return;
+      }
+  
+      // Converte a string de data para um objeto Date
+      console.log(paymentDate)
+  
+      // Formatar a data de pagamento para o formato "YYYY-MM-DD"
+      // const formattedPaymentDate = parsedPaymentDate.toISOString().split('T')[0]; // Formato "YYYY-MM-DD"
+      // console.log(formattedPaymentDate)
+      // Envia a solicitação para o backend, incluindo a data de pagamento no formato correto
+      await axios.put(`http://192.168.0.23:3333/expense/status?expense_id=${id}`, {
+        payment_date: paymentDate, // Envia a data de pagamento formatada
+      });
+  
+      // Atualiza a lista de despesas com a nova data de pagamento
       setDespesas((prevDespesas) =>
         prevDespesas.map((despesa) =>
-          despesa.id === id ? { ...despesa, status: true, payment_date: paymentDate } : despesa
+          despesa.id === id ? { ...despesa, status: true, payment_date: formattedPaymentDate } : despesa
         )
       );
-
+  
+      // Exibe alerta de sucesso
       Alert.alert('Sucesso', 'Despesa marcada como paga!');
-      setPaymentDate(''); // Limpa o campo de data após o pagamento
+      
+      // Limpa o campo de data e fecha o DatePicker
+      setPaymentDate('');
+      setDatePickerVisible(false); // Fecha o DatePicker após a ação
+  
     } catch (error) {
       console.error('Erro ao pagar despesa:', error);
       Alert.alert('Erro', 'Não foi possível marcar a despesa como paga.');
     }
   };
-
+  
   // Função para lidar com a exclusão
   const handleExcluir = (id) => {
     Alert.alert(
@@ -291,21 +311,27 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 10,
     marginTop: 10,
+    marginBottom: 10, // Adiciona espaço abaixo do botão
   },
+  
   button2: {
     backgroundColor: '#FF0000', 
     padding: 10,
     borderRadius: 10,
     marginTop: 10,
+    marginBottom: 10, // Adiciona espaço abaixo do botão
   },
+  
   buttonText: {
     color: '#fff',
     textAlign: 'center',
   },
+  
   buttonText2: {
     color: '#fff',
     textAlign: 'center',
   },
+
   despesaContainer: {
     padding: 10,
     marginBottom: 10,
