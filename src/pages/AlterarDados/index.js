@@ -39,7 +39,7 @@ export default function AlterarDados() {
 
       // Enviar a requisição PUT para o backend
       const response = await axios.put(
-        'http://192.168.0.23:3333/user/edit', // Altere para o endereço correto do seu backend
+        'http://192.168.0.33:3333/user/edit', // Altere para o endereço correto do seu backend
         payload,
         {
           headers: {

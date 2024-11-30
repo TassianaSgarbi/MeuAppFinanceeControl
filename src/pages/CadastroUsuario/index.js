@@ -44,7 +44,7 @@ export default function CadastroUsuario() {
 
     try {
       // Enviar os dados para o backend via POST
-      const response = await axios.post('http://192.168.0.23:3333/users', data, {
+      const response = await axios.post('http://192.168.0.33:3333/users', data, {
         headers: { 'Content-Type': 'application/json' }
       });
       console.log(response.data); // Exibe a resposta do servidor

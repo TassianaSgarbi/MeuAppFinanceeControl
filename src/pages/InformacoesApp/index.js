@@ -38,7 +38,7 @@ export default function DeletarUsuario() {
               try {
                 // Requisição para deletar o usuário
                 const response = await axios.delete(
-                  `http://192.168.0.23:3333/delete-user?user_id=${user_id}`, // Altere para o endpoint correto
+                  `http://192.168.0.33:3333/delete-user?user_id=${user_id}`, // Altere para o endpoint correto
                   {
                     headers: {
                       Authorization: `Bearer ${token}`, // Passando o token JWT no cabeçalho

@@ -108,11 +108,11 @@ export default function Home() {
         [
           {
             text: 'OK',
-            onPress: () => logout(), // Chama o logout após 30 segundos de inatividade
+            onPress: () => logout(), 
           },
         ]
       );
-    }, 30000); // 30 segundos de inatividade
+    }, 30000000); 
 
     setLogoutTimer(timer); // Salva o temporizador no estado
   };
@@ -196,10 +196,10 @@ export default function Home() {
               style={styles.menuItem}
               onPress={() => {
                 closeMenu();
-                navigation.navigate('DeletarUsuario'); // Navega para Deletar Usuario
+                navigation.navigate('InformacoesApp'); // Navega para Informações do APP
               }}
             >
-              <Text style={styles.menuItemText}>Deletar Usuario</Text>
+              <Text style={styles.menuItemText}>Informações do APP</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
