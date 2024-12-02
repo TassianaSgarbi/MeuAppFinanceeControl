@@ -8,9 +8,8 @@ export default function ConsultarDespesas() {
   const [despesasFiltradas, setDespesasFiltradas] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('todas');
-  const [selectedDespesa, setSelectedDespesa] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false); 
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [showConfirmPaymentModal, setShowConfirmPaymentModal] = useState(false);
   const [selectedExpenseId, setSelectedExpenseId] = useState(null);
 
@@ -40,82 +39,45 @@ export default function ConsultarDespesas() {
     }
   };
 
-  const getCategoriaNome = (categoryId) => {
-    const categoria = categorias.find(cat => cat.id === categoryId);
-    return categoria ? categoria.name : 'Categoria não encontrada';
-  };
-
-  const filtrarPorCategoria = () => {
-    if (selectedCategory === 'todas') {
-      setDespesasFiltradas(despesas);
-    } else {
-      const despesasFiltradas = despesas.filter(despesa => despesa.categoryId === selectedCategory);
-      setDespesasFiltradas(despesasFiltradas);
-    }
-  };
-
-  const filtrarPorDespesa = () => {
-    if (!selectedDespesa || selectedDespesa === 'todas') {
-      setDespesasFiltradas(despesas);
-    } else {
-      const despesasFiltradas = despesas.filter(despesa => despesa.description === selectedDespesa);
-      setDespesasFiltradas(despesasFiltradas);
-    }
-  };
-
-  // Função para abrir o DateTimePicker e selecionar a data
   const handleSelecionarData = (id) => {
     setSelectedExpenseId(id);
-    setShowDatePicker(true); // Ativa o DateTimePicker para selecionar a data
+    setShowDatePicker(true);
   };
 
-  // Função para marcar como pago
   const handleMarcarComoPago = async () => {
-    if (!selectedDate) {
-      Alert.alert('Erro', 'Por favor, selecione uma data de pagamento.');
+    if (!selectedDate || !selectedExpenseId) {
+      Alert.alert('Erro', 'Por favor, selecione uma data e uma despesa.');
       return;
     }
 
     try {
-      const response = await axios.put(`http://192.168.0.23:3333/expense/status?expense_id=${selectedExpenseId}`, {
-        date: selectedDate.toString(),
+      await axios.put(`http://192.168.0.23:3333/expense/status?expense_id=${selectedExpenseId}`, {
+        date: selectedDate.toISOString(),
       });
 
       setDespesas((prevDespesas) =>
         prevDespesas.map((despesa) =>
-          despesa.id === selectedExpenseId ? { ...despesa, status: true, payment_date: selectedDate.toString() } : despesa
+          despesa.id === selectedExpenseId ? { ...despesa, status: true, payment_date: selectedDate.toISOString() } : despesa
         )
       );
 
       setDespesasFiltradas((prevDespesasFiltradas) =>
         prevDespesasFiltradas.map((despesa) =>
-          despesa.id === selectedExpenseId ? { ...despesa, status: true, payment_date: selectedDate.toString() } : despesa
+          despesa.id === selectedExpenseId ? { ...despesa, status: true, payment_date: selectedDate.toISOString() } : despesa
         )
       );
 
       Alert.alert('Sucesso', 'Despesa marcada como paga!');
-      setShowConfirmPaymentModal(false); // Fecha a modal de confirmação
-      setShowDatePicker(false); // Fecha o DateTimePicker
+      setShowConfirmPaymentModal(false);
     } catch (error) {
-      console.error('Erro ao pagar despesa:', error);
+      console.error('Erro ao marcar despesa como paga:', error);
       Alert.alert('Erro', 'Não foi possível marcar a despesa como paga.');
     }
   };
 
   const cancelarPagamento = () => {
-    setShowConfirmPaymentModal(false); // Fecha a modal de confirmação
-    setShowDatePicker(false); // Fecha o DateTimePicker
-  };
-
-  const handleExcluir = (id) => {
-    Alert.alert(
-      'Confirmar Exclusão',
-      'Tem certeza que deseja excluir essa despesa?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Excluir', onPress: () => excluirDespesa(id) },
-      ]
-    );
+    setShowConfirmPaymentModal(false);
+    setShowDatePicker(false);
   };
 
   const excluirDespesa = async (id) => {
@@ -129,6 +91,17 @@ export default function ConsultarDespesas() {
     }
   };
 
+  const handleExcluirDespesa = (id) => {
+    Alert.alert(
+      'Confirmar Exclusão',
+      'Tem certeza de que deseja excluir esta despesa?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Excluir', onPress: () => excluirDespesa(id) },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -136,35 +109,27 @@ export default function ConsultarDespesas() {
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <View style={styles.despesaContainer}>
-            <Text style={styles.despesaText}>Categoria: {getCategoriaNome(item.categoryId)}</Text>
             <Text style={styles.despesaText}>Descrição: {item.description}</Text>
             <Text style={styles.despesaText}>Valor: R$ {item.amount}</Text>
-            <Text style={styles.despesaText}>Data Vencimento: {item.due_date}</Text>
+            <Text style={styles.despesaText}>Vencimento: {item.due_date}</Text>
+            <Text style={styles.despesaText}>Observação: {item.observation}</Text>
             <Text style={styles.despesaText}>Status: {item.status ? 'Pago' : 'Pendente'}</Text>
             {item.status && item.payment_date && (
-              <Text style={styles.despesaText}>
-                Data Pagamento: {new Date(item.payment_date).toLocaleDateString()}
-              </Text>
+              <Text style={styles.despesaText}>Pagamento: {new Date(item.payment_date).toLocaleDateString()}</Text>
             )}
-
             <View style={styles.buttonContainer}>
               {!item.status && (
-                <>
-                  <TouchableOpacity
-                    style={styles.button}
-                    onPress={() => handleSelecionarData(item.id)} // Botão para selecionar data
-                  >
-                    <Text style={styles.buttonText}>Selecionar Data</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.button}
-                    onPress={() => setShowConfirmPaymentModal(true)} // Botão para marcar como pago
-                  >
-                    <Text style={styles.buttonText}>Marcar como Pago</Text>
-                  </TouchableOpacity>
-                </>
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={() => handleSelecionarData(item.id)}
+                >
+                  <Text style={styles.buttonText}>Selecionar Data</Text>
+                </TouchableOpacity>
               )}
-              <TouchableOpacity style={styles.button2} onPress={() => handleExcluir(item.id)} >
+              <TouchableOpacity
+                style={styles.button2}
+                onPress={() => handleExcluirDespesa(item.id)}
+              >
                 <Text style={styles.buttonText2}>Excluir</Text>
               </TouchableOpacity>
             </View>
@@ -174,51 +139,36 @@ export default function ConsultarDespesas() {
 
       {/* Modal de DatePicker */}
       {showDatePicker && (
-        <Modal
-          transparent={true}
-          animationType="slide"
-          visible={showDatePicker}
-          onRequestClose={() => setShowDatePicker(false)} // Fecha o DateTimePicker ao pressionar o botão de voltar
-        >
+        <Modal transparent={true} animationType="slide" visible={showDatePicker}>
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Selecione a Data de Pagamento</Text>
+              <Text style={styles.modalTitle}>Selecione a Data</Text>
               <DateTimePicker
                 value={selectedDate}
                 mode="date"
                 display="calendar"
                 onChange={(event, date) => {
-                  if (date) {
-                    setSelectedDate(date); // Atualiza a data selecionada
-                    setShowDatePicker(false); // Fecha o DateTimePicker
+                  if (event.type === "set" && date) {
+                    setSelectedDate(date);
+                    setShowDatePicker(false);
+                    setShowConfirmPaymentModal(true);
+                  } else {
+                    setShowDatePicker(false);
                   }
                 }}
               />
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.button} onPress={() => setShowConfirmPaymentModal(true)}>
-                  <Text style={styles.buttonText}>Confirmar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button2} onPress={() => setShowDatePicker(false)}>
-                  <Text style={styles.buttonText2}>Cancelar</Text>
-                </TouchableOpacity>
-              </View>
             </View>
           </View>
         </Modal>
       )}
 
-      {/* Modal de confirmação de pagamento */}
+      {/* Modal de Confirmação */}
       {showConfirmPaymentModal && (
-        <Modal
-          transparent={true}
-          animationType="slide"
-          visible={showConfirmPaymentModal}
-          onRequestClose={cancelarPagamento}
-        >
+        <Modal transparent={true} animationType="slide" visible={showConfirmPaymentModal}>
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Confirmar Pagamento</Text>
-              <Text style={styles.modalText}>Você tem certeza que deseja marcar esta despesa como paga?</Text>
+              <Text>Deseja confirmar o pagamento desta despesa?</Text>
               <View style={styles.buttonContainer}>
                 <TouchableOpacity style={styles.button} onPress={handleMarcarComoPago}>
                   <Text style={styles.buttonText}>Confirmar</Text>
@@ -247,5 +197,4 @@ const styles = StyleSheet.create({
   modalContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)' },
   modalContent: { backgroundColor: '#fff', padding: 20, borderRadius: 10, width: 300 },
   modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
-  modalText: { fontSize: 16, marginBottom: 20 },
 });

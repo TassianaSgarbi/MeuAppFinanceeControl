@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import axios from 'axios'; // Importando o axios
-import {jwtDecode} from 'jwt-decode'; // Importação correta do jwt-decode
+import { jwtDecode } from 'jwt-decode'; // Importação correta do jwt-decode
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Importação correta
 
 export default function AlterarDados() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState(''); // Estado para mensagem de erro
 
   const handleUpdate = async () => {
@@ -30,9 +32,18 @@ export default function AlterarDados() {
       const payload = { user_id }; // Incluindo o ID do usuário
       if (name.trim()) payload.new_name = name;
       if (email.trim()) payload.new_email = email;
+      
+      // Se a nova senha for preenchida, é necessário confirmar a senha
+      if (newPassword.trim()) {
+        if (newPassword.trim() !== confirmNewPassword.trim()) {
+          setErrorMessage('As senhas não coincidem.');
+          return;
+        }
+        payload.new_password = newPassword; // Inclui a nova senha no payload
+      }
 
       // Verifica se pelo menos um campo foi preenchido
-      if (!payload.new_name && !payload.new_email) {
+      if (!payload.new_name && !payload.new_email && !payload.new_password) {
         setErrorMessage('Preencha pelo menos um campo para atualizar.');
         return;
       }
@@ -56,7 +67,7 @@ export default function AlterarDados() {
     }
   };
 
-    return (
+  return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Preencha os campos abaixo para atualizar seus dados!</Text>
       {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
@@ -75,6 +86,24 @@ export default function AlterarDados() {
         onChangeText={setEmail}
         keyboardType="email-address"
       />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Nova Senha"
+        value={newPassword}
+        onChangeText={setNewPassword}
+        secureTextEntry
+      />
+
+      {newPassword.trim() !== '' && (
+        <TextInput
+          style={styles.input}
+          placeholder="Confirmar Nova Senha"
+          value={confirmNewPassword}
+          onChangeText={setConfirmNewPassword}
+          secureTextEntry
+        />
+      )}
 
       <TouchableOpacity style={styles.button} onPress={handleUpdate}>
         <Text style={styles.buttonText}>Atualizar Dados</Text>
@@ -101,7 +130,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 10,
     marginBottom: 15,
-    textAlign: 'center'
+    textAlign: 'center',
   },
   button: {
     backgroundColor: '#007BFF',

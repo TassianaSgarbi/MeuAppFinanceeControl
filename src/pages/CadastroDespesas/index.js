@@ -137,7 +137,7 @@ const fetchTiposDespesas = async () => {
 
   // Função para confirmar a data selecionada
   const handleDateConfirm = (date) => {
-    const dataFormatada = date.toISOString().split('T')[0]; // Formato "YYYY-MM-DD"
+    const dataFormatada = date.toLocaleDateString('pt-BR'); // 'pt-BR' formata a data como 'DD/MM/YYYY'
     if (campoDataAtual === 'vencimento') {
       setDataVencimento(dataFormatada);
     } 

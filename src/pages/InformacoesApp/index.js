@@ -1,31 +1,23 @@
 import React from 'react';
-import { Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import axios from 'axios'; // Importando o axios
-import { jwtDecode } from 'jwt-decode'; // Importação correta do jwt-decode
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Importação correta
-import { useNavigation } from '@react-navigation/native'; // Para navegação
+import { Text, StyleSheet, TouchableOpacity, ScrollView, Alert, View } from 'react-native';
+import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 
-export default function DeletarUsuario() {
+export default function InformacoesApp() {
   const navigation = useNavigation(); // Hook para navegação
 
   const handleDelete = async () => {
     try {
-      // Recupera o token JWT do armazenamento
       const token = await AsyncStorage.getItem('authToken');
+      if (!token) throw new Error('Token não encontrado');
 
-      if (!token) {
-        throw new Error('Token não encontrado');
-      }
-
-      // Decodifica o token para obter o user_id
       const decodedToken = jwtDecode(token);
-      const user_id = decodedToken?.sub || decodedToken?.user_id; // Ajuste baseado na estrutura real do token
+      const user_id = decodedToken?.sub || decodedToken?.user_id;
 
-      if (!user_id) {
-        throw new Error('User ID não encontrado no token');
-      }
+      if (!user_id) throw new Error('User ID não encontrado no token');
 
-      // Confirmação para o usuário antes de deletar
       Alert.alert(
         'Confirmação',
         'Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita.',
@@ -36,35 +28,25 @@ export default function DeletarUsuario() {
             style: 'destructive',
             onPress: async () => {
               try {
-                // Requisição para deletar o usuário
                 const response = await axios.delete(
-                  `http://192.168.0.33:3333/delete-user?user_id=${user_id}`, // Altere para o endpoint correto
-                  {
-                    headers: {
-                      Authorization: `Bearer ${token}`, // Passando o token JWT no cabeçalho
-                    },
-                  }
+                  `http://192.168.0.23:3333/delete-user?user_id=${user_id}`,
+                  { headers: { Authorization: `Bearer ${token}` } }
                 );
 
-                console.log('Usuário deletado com sucesso:', response.data);
-
-                // Alerta de sucesso
                 Alert.alert(
                   'Sucesso',
-                  'Conta Usuário Excluída com Sucesso!',
+                  'Conta excluída com sucesso!',
                   [
                     {
                       text: 'OK',
                       onPress: async () => {
-                        // Limpa o token local e redireciona o usuário
                         await AsyncStorage.removeItem('authToken');
-                        navigation.navigate('Login'); // Redireciona para a tela de login
+                        navigation.navigate('Login');
                       },
                     },
                   ]
                 );
               } catch (error) {
-                console.error('Erro ao deletar o usuário:', error.response?.data?.message || error.message);
                 Alert.alert('Erro', error.response?.data?.message || 'Erro ao excluir a conta.');
               }
             },
@@ -72,17 +54,34 @@ export default function DeletarUsuario() {
         ]
       );
     } catch (error) {
-      console.error('Erro ao deletar o usuário:', error.response?.data?.message || error.message);
-      Alert.alert('Erro', error.response?.data?.message || 'Erro ao excluir a conta.');
+      Alert.alert('Erro', error.message || 'Erro ao excluir a conta.');
     }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Excluir Conta</Text>
-      <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-        <Text style={styles.buttonText}>Deletar Usuário</Text>
-      </TouchableOpacity>
+        <Text style={styles.description}>
+        O **Financee Control** é um aplicativo de controle financeiro. 
+        Nele, você pode fazer perguntas no chatbot sobre economia, finanças e ter dicas de como economizar.
+      </Text>
+
+      <View style={styles.deleteConfirmation}>
+        <Text style={styles.warningText}>Deseja deletar sua conta?</Text>
+        <View style={styles.buttonGroup}>
+          <TouchableOpacity
+            style={[styles.confirmButton, { backgroundColor: '#28a745' }]}
+            onPress={handleDelete}
+          >
+            <Text style={styles.buttonText}>Sim</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.confirmButton, { backgroundColor: '#dc3545' }]}
+            onPress={() => navigation.goBack()} // Redireciona para a tela anterior
+          >
+            <Text style={styles.buttonText}>Não</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -94,19 +93,40 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
   },
   title: {
-    fontSize: 18,
+    fontSize: 24,
+    fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
     color: '#333',
   },
-  deleteButton: {
-    backgroundColor: '#dc3545',
+  description: {
+    fontSize: 16,
+    marginBottom: 40,
+    textAlign: 'center',
+    color: '#555',
+    lineHeight: 22,
+  },
+  deleteConfirmation: {
+    marginTop: 20,
+  },
+  warningText: {
+    fontSize: 18,
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  buttonGroup: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  confirmButton: {
     padding: 15,
     borderRadius: 5,
+    minWidth: '40%',
+    alignItems: 'center',
   },
   buttonText: {
     color: '#fff',
-    textAlign: 'center',
     fontSize: 16,
   },
 });
