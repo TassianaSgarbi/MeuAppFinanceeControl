@@ -61,9 +61,18 @@ export default function InformacoesApp() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.description}>
-        O **Financee Control** é um aplicativo de controle financeiro. 
-        Nele, você pode fazer perguntas no chatbot sobre economia, finanças e ter dicas de como economizar.
-      </Text>
+            O <Text style={{ fontWeight: 'bold' }}>Financee Control</Text> é um aplicativo de controle financeiro intuitivo, desenvolvido para ajudar os usuários a gerenciarem suas finanças de maneira eficiente e prática.
+        </Text>
+        <Text style={styles.description}>
+          Com a funcionalidade de categorização, é possível organizar suas despesas em diferentes categorias, como alimentação, lazer, transporte e muito mais. Isso facilita a visualização de onde o dinheiro está sendo gasto e ajuda a identificar áreas onde é possível economizar.
+        </Text>
+        <Text style={styles.description}>
+          Nele, você pode fazer perguntas no chatbot sobre economia, finanças e ter dicas de como economizar.
+        </Text>
+        <Text style={styles.description}>
+          Ele foi projetado para ser fácil de usar, mesmo para quem não tem muita experiência com finanças.
+        </Text>
+
 
       <View style={styles.deleteConfirmation}>
         <Text style={styles.warningText}>Deseja deletar sua conta?</Text>
