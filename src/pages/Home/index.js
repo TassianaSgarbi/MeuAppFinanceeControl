@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Modal, Animated, Dimensions, ScrollView, StyleSheet, Alert } from 'react-native';
+import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
 import { LineChart, BarChart, PieChart } from 'react-native-chart-kit';
@@ -12,6 +13,7 @@ export default function Home() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuAnimation] = useState(new Animated.Value(-menuWidth)); // Animação de deslize
   const [logoutTimer, setLogoutTimer] = useState(null); // Estado para o temporizador
+  const [pieData, setPieData] = useState([]); // Estado para os dados do gráfico de pizza
   const navigation = useNavigation();
 
   const barData = {
@@ -33,29 +35,38 @@ export default function Home() {
     ],
   };
 
-  const pieData = [
-    {
-      name: 'Categoria A',
-      population: 215,
-      color: '#f00',
-      legendFontColor: '#7F7F7F',
-      legendFontSize: 15,
-    },
-    {
-      name: 'Categoria B',
-      population: 280,
-      color: '#0f0',
-      legendFontColor: '#7F7F7F',
-      legendFontSize: 15,
-    },
-    {
-      name: 'Categoria C',
-      population: 500,
-      color: '#00f',
-      legendFontColor: '#7F7F7F',
-      legendFontSize: 15,
-    },
-  ];
+  // Função para buscar e agregar as despesas por categoria
+  const fetchPieDataFromExpenses = async () => {
+    try {
+      // Requisição ao backend para buscar despesas
+      const response = await axios.get('http://192.168.0.23:3333/expenses'); // Altere para sua URL do backend
+
+      // Agrupar despesas por categoria e somar valores
+      const aggregatedData = response.data.reduce((acc, expense) => {
+        const category = expense.category_name || 'Outros'; // Usa 'Outros' se a categoria não existir
+        if (!acc[category]) {
+          acc[category] = 0;
+        }
+        acc[category] += expense.amount; // Soma os valores da mesma categoria
+        return acc;
+      }, {});
+
+      // Transformar os dados no formato esperado pelo gráfico de pizza
+      const pieChartData = Object.entries(aggregatedData).map(([category, total]) => ({
+        name: category,
+        population: total,
+        color: '#' + ((Math.random() * 0xffffff) << 0).toString(16).padStart(6, '0'), // Gera cores aleatórias
+        legendFontColor: '#7F7F7F',
+        legendFontSize: 15,
+      }));
+
+      // Atualiza o estado com os dados processados
+      setPieData(pieChartData);
+    } catch (error) {
+      console.error('Erro ao carregar dados do gráfico de despesas:', error);
+      Alert.alert('Erro', 'Não foi possível carregar os dados para o gráfico.');
+    }
+  };
 
   // Função para abrir o menu
   const openMenu = () => {
@@ -118,8 +129,7 @@ export default function Home() {
   };
 
   useEffect(() => {
-    // Inicializa o temporizador assim que o componente for montado
-    resetLogoutTimer();
+    fetchPieDataFromExpenses(); // Chama a função ao montar o componente
 
     // Limpar o temporizador quando o componente for desmontado
     return () => {
@@ -131,8 +141,7 @@ export default function Home() {
 
   return (
     <View style={{ flex: 1 }} onTouchStart={resetLogoutTimer}> 
-      
-        <View style={styles.headerGradient}>
+      <View style={styles.headerGradient}>
         <TouchableOpacity onPress={openMenu}>
           <Feather name="menu" size={24} color="#fff" style={styles.menuIcon} />
         </TouchableOpacity>
@@ -140,110 +149,41 @@ export default function Home() {
 
       <Modal visible={menuVisible} transparent animationType="none">
         <TouchableOpacity style={styles.modalOverlay} onPress={closeMenu}>
-          <Animated.View style={[styles.menuContainer, { transform: [{ translateX: menuAnimation }] }]}>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                closeMenu();
-                navigation.navigate('CadastroCategoria'); // Navega para CadastroCategoria
-              }}
-            >
+          <Animated.View style={[styles.menuContainer, { transform: [{ translateX: menuAnimation }] }]} >
+            <TouchableOpacity style={styles.menuItem} onPress={() => { closeMenu(); navigation.navigate('CadastroCategoria'); }}>
               <Text style={styles.menuItemText}>Cadastrar Categoria</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                closeMenu();
-                navigation.navigate('CadastroDespesas'); // Navega para CadastroDespesas
-              }}
-            >
+            <TouchableOpacity style={styles.menuItem} onPress={() => { closeMenu(); navigation.navigate('CadastroDespesas'); }}>
               <Text style={styles.menuItemText}>Cadastrar Despesas</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                closeMenu();
-                navigation.navigate('ConsultarDespesas'); // Navega para ConsultarDespesas
-              }}
-            >
+            <TouchableOpacity style={styles.menuItem} onPress={() => { closeMenu(); navigation.navigate('ConsultarDespesas'); }}>
               <Text style={styles.menuItemText}>Consultar Despesas</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                closeMenu();
-                navigation.navigate('AlterarDados'); // Navega para Alterar Dados
-              }}
-            >
+            <TouchableOpacity style={styles.menuItem} onPress={() => { closeMenu(); navigation.navigate('AlterarDados'); }}>
               <Text style={styles.menuItemText}>Alterar Dados</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                closeMenu();
-                navigation.navigate('Chatbot'); // Navega para Chatbot
-              }}
-            >
+            <TouchableOpacity style={styles.menuItem} onPress={() => { closeMenu(); navigation.navigate('Chatbot'); }}>
               <Text style={styles.menuItemText}>Chatbot</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                closeMenu();
-                navigation.navigate('InformacoesApp'); // Navega para Informações do APP
-              }}
-            >
+            <TouchableOpacity style={styles.menuItem} onPress={() => { closeMenu(); navigation.navigate('InformacoesApp'); }}>
               <Text style={styles.menuItemText}>Informações do APP</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                closeMenu();
-                logout(); // Chama a função logout
-              }}
-            >
+            <TouchableOpacity style={styles.menuItem} onPress={() => { closeMenu(); logout(); }}>
               <Text style={styles.menuItemText}>Sair do Sistema</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={closeMenu}
-            >
+            <TouchableOpacity style={styles.closeButton} onPress={closeMenu}>
               <Text style={styles.closeButtonText}>Fechar</Text>
             </TouchableOpacity>
           </Animated.View>
         </TouchableOpacity>
       </Modal>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={true}
-      >
+      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={true}>
         <View style={styles.chartContainer}>
           {/* Gráfico de Barras */}
-          <BarChart
-            data={barData}
-            width={screenWidth - 40}
-            height={220}
-            fromZero={true}
-            chartConfig={chartConfig}
-            style={styles.chart}
-          />
+          <BarChart data={barData} width={screenWidth - 40} height={220} fromZero={true} chartConfig={chartConfig} style={styles.chart} />
           {/* Gráfico de Linha */}
-          <LineChart
-            data={lineData}
-            width={screenWidth - 40}
-            height={220}
-            chartConfig={chartConfig}
-            style={styles.chart}
-          />
+          <LineChart data={lineData} width={screenWidth - 40} height={220} chartConfig={chartConfig} style={styles.chart} />
           {/* Gráfico de Pizza */}
           <PieChart
             data={pieData}
@@ -260,8 +200,6 @@ export default function Home() {
     </View>
   );
 }
-
-
 
 const chartConfig = {
   backgroundColor: '#fff',
