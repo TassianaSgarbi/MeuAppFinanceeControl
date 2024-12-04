@@ -33,13 +33,15 @@ export default function AlterarDados() {
       if (name.trim()) payload.new_name = name;
       if (email.trim()) payload.new_email = email;
       
+      
       // Se a nova senha for preenchida, é necessário confirmar a senha
       if (newPassword.trim()) {
         if (newPassword.trim() !== confirmNewPassword.trim()) {
           setErrorMessage('As senhas não coincidem.');
           return;
         }
-        payload.new_password = newPassword; // Inclui a nova senha no payload
+        payload.new_password = newPassword;
+        payload.confirm_password = confirmNewPassword // Inclui a nova senha no payload
       }
 
       // Verifica se pelo menos um campo foi preenchido
@@ -50,7 +52,7 @@ export default function AlterarDados() {
 
       // Enviar a requisição PUT para o backend
       const response = await axios.put(
-        'http://192.168.0.33:3333/user/edit', // Altere para o endereço correto do seu backend
+        'http://192.168.0.23:3333/user/edit', // Altere para o endereço correto do seu backend
         payload,
         {
           headers: {

@@ -40,7 +40,8 @@ export default function Home() {
     try {
       // Requisição ao backend para buscar despesas
       const response = await axios.get('http://192.168.0.23:3333/expenses'); // Altere para sua URL do backend
-
+      console.log('Resposta do backend:', response.data); // Verifique a resposta
+  
       // Agrupar despesas por categoria e somar valores
       const aggregatedData = response.data.reduce((acc, expense) => {
         const category = expense.category_name || 'Outros'; // Usa 'Outros' se a categoria não existir
@@ -50,16 +51,19 @@ export default function Home() {
         acc[category] += expense.amount; // Soma os valores da mesma categoria
         return acc;
       }, {});
-
+  
+      // Calcular o total das despesas
+      const totalExpenses = Object.values(aggregatedData).reduce((sum, amount) => sum + amount, 0);
+  
       // Transformar os dados no formato esperado pelo gráfico de pizza
       const pieChartData = Object.entries(aggregatedData).map(([category, total]) => ({
         name: category,
-        population: total,
+        population: (total / totalExpenses) * 100, // Porcentagem
         color: '#' + ((Math.random() * 0xffffff) << 0).toString(16).padStart(6, '0'), // Gera cores aleatórias
         legendFontColor: '#7F7F7F',
         legendFontSize: 15,
       }));
-
+  
       // Atualiza o estado com os dados processados
       setPieData(pieChartData);
     } catch (error) {
