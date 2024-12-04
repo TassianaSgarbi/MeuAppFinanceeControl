@@ -9,9 +9,7 @@ export default function ConsultarDespesas() {
   const [despesasFiltradas, setDespesasFiltradas] = useState([]); // Estado para despesas filtradas
   const [categorias, setCategorias] = useState([]); // Estado para armazenar as categorias
   const [selectedCategory, setSelectedCategory] = useState('todas'); // Categoria selecionada, com valor inicial "todas"
-  const [selectedDespesa, setSelectedDespesa] = useState(null); // Estado para a despesa selecionada
   const [showModalCategoria, setShowModalCategoria] = useState(false); // Controle do modal de categoria
-  const [showModalDespesa, setShowModalDespesa] = useState(false); // Controle do modal de despesa
   const [showConfirmPaymentModal, setShowConfirmPaymentModal] = useState(false);
   const [selectedExpenseId, setSelectedExpenseId] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false); // State for DateTimePicker modal visibility
@@ -66,19 +64,7 @@ export default function ConsultarDespesas() {
     setShowModalCategoria(false); // Fecha o modal após a seleção
   };
 
-  // Função para filtrar despesas por nome (por descrição)
-  const filtrarPorDespesa = () => {
-    if (!selectedDespesa) {
-      // Se nenhuma despesa for selecionada, exibe todas as despesas
-      setDespesasFiltradas(despesas);
-    } else {
-      // Filtra a despesa selecionada por descrição
-      const despesasFiltradas = despesas.filter(despesa => despesa.description === selectedDespesa.description);
-      setDespesasFiltradas(despesasFiltradas); // Atualiza as despesas filtradas
-    }
-    setShowModalDespesa(false); // Fecha o modal após a seleção
-  };
-
+  
   const handleSelecionarData = (id) => {
     setSelectedExpenseId(id);
     setShowDatePicker(true);
@@ -149,9 +135,6 @@ export default function ConsultarDespesas() {
         <TouchableOpacity style={styles.filterButton} onPress={() => setShowModalCategoria(true)}>
           <Text style={styles.filterButtonText}>Consultar por Categoria</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.filterButton} onPress={() => setShowModalDespesa(true)}>
-          <Text style={styles.filterButtonText}>Consultar por Despesa</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Modal para selecionar categoria */}
@@ -175,35 +158,6 @@ export default function ConsultarDespesas() {
               ))}
             </Picker>
             <TouchableOpacity style={styles.button} onPress={filtrarPorCategoria}>
-              <Text style={styles.buttonText}>OK</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Modal para selecionar despesa */}
-      <Modal
-        transparent={true}
-        animationType="slide"
-        visible={showModalDespesa}
-        onRequestClose={() => setShowModalDespesa(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Selecione uma Despesa</Text>
-            <FlatList
-              data={despesas}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.despesaItem}
-                  onPress={() => setSelectedDespesa(item)}
-                >
-                  <Text style={styles.despesaItemText}>{item.description}</Text>
-                </TouchableOpacity>
-              )}
-            />
-            <TouchableOpacity style={styles.button} onPress={filtrarPorDespesa}>
               <Text style={styles.buttonText}>OK</Text>
             </TouchableOpacity>
           </View>
@@ -294,7 +248,7 @@ export default function ConsultarDespesas() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },container: {
+  container: {
     flex: 1,
     backgroundColor: 'white',
     paddingHorizontal: 20,
@@ -309,7 +263,7 @@ const styles = StyleSheet.create({
   despesaText: { fontSize: 16, marginBottom: 5 },
   buttonContainer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
   button: { backgroundColor: '#4CAF50', padding: 10, borderRadius: 5 },
-  buttonText: { color: '#fff', fontSize: 16 },
+  buttonText: { color: '#fff', fontSize: 16,textAlign: 'center', },
   button2: { backgroundColor: '#f44336', padding: 10, borderRadius: 5 },
   buttonText2: { color: '#fff', fontSize: 16 },
   modalContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)' },
@@ -321,10 +275,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%', // Definindo a largura do botão
   },
   filterButtonText: {
     color: '#fff',
     fontSize: 14,
+    textAlign: 'center',
   },
   
 });
