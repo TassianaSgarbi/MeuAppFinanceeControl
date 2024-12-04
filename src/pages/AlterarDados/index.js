@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import axios from 'axios'; // Importando o axios
-import { jwtDecode } from 'jwt-decode'; // Importação correta do jwt-decode
+import {jwtDecode} from 'jwt-decode'; // Importação correta do jwt-decode
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Importação correta
 
 export default function AlterarDados() {
@@ -13,14 +13,11 @@ export default function AlterarDados() {
 
   const handleUpdate = async () => {
     try {
-      // Recupera o token JWT do armazenamento
       const token = await AsyncStorage.getItem('authToken');
-
       if (!token) {
         throw new Error('Token não encontrado');
       }
 
-      // Decodifica o token para obter o userId
       const decodedToken = jwtDecode(token);
       const user_id = decodedToken?.sub || decodedToken?.user_id; // Ajuste baseado na estrutura real do token
 
@@ -28,12 +25,11 @@ export default function AlterarDados() {
         throw new Error('User ID não encontrado no token');
       }
 
-      // Construir o payload de forma condicional
+      // Construir o payload de forma condicional, omitindo campos vazios
       const payload = { user_id }; // Incluindo o ID do usuário
       if (name.trim()) payload.new_name = name;
       if (email.trim()) payload.new_email = email;
-      
-      
+
       // Se a nova senha for preenchida, é necessário confirmar a senha
       if (newPassword.trim()) {
         if (newPassword.trim() !== confirmNewPassword.trim()) {
@@ -41,7 +37,7 @@ export default function AlterarDados() {
           return;
         }
         payload.new_password = newPassword;
-        payload.confirm_password = confirmNewPassword // Inclui a nova senha no payload
+        payload.confirm_password = confirmNewPassword;
       }
 
       // Verifica se pelo menos um campo foi preenchido
