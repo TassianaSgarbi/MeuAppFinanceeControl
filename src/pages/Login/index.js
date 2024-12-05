@@ -35,7 +35,7 @@ export default function Login({ navigation }) {
         navigation.navigate('Home');
       }
     } catch (error) {
-      console.error('Erro ao fazer login', error.response?.data || error.message);
+      //console.error('Erro ao fazer login', error.response?.data || error.message);
       Alert.alert('Erro', 'E-mail ou senha incorretos.');
     }
   };

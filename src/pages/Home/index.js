@@ -38,36 +38,36 @@ export default function Home() {
   // Função para buscar e agregar as despesas por categoria
   const fetchPieDataFromExpenses = async () => {
     try {
-      // Requisição ao backend para buscar despesas
-      const response = await axios.get('http://192.168.0.23:3333/expenses'); // Altere para sua URL do backend
-      console.log('Resposta do backend:', response.data); // Verifique a resposta
+      const response = await axios.get('http://192.168.0.23:3333/expenses');
   
-      // Agrupar despesas por categoria e somar valores
       const aggregatedData = response.data.reduce((acc, expense) => {
-        const category = expense.category_name || 'Outros'; // Usa 'Outros' se a categoria não existir
+        const category = expense.category_name || 'Outros';
         if (!acc[category]) {
           acc[category] = 0;
         }
-        acc[category] += expense.amount; // Soma os valores da mesma categoria
+        acc[category] += expense.amount;
         return acc;
       }, {});
   
-      // Calcular o total das despesas
       const totalExpenses = Object.values(aggregatedData).reduce((sum, amount) => sum + amount, 0);
   
-      // Transformar os dados no formato esperado pelo gráfico de pizza
-      const pieChartData = Object.entries(aggregatedData).map(([category, total]) => ({
-        name: category,
-        population: (total / totalExpenses) * 100, // Porcentagem
-        color: '#' + ((Math.random() * 0xffffff) << 0).toString(16).padStart(6, '0'), // Gera cores aleatórias
-        legendFontColor: '#7F7F7F',
-        legendFontSize: 15,
-      }));
+      if (totalExpenses === 0) {
+        setPieData([]);
+        return;
+      }
   
-      // Atualiza o estado com os dados processados
+      const pieChartData = Object.entries(aggregatedData)
+        .filter(([category, total]) => total > 0)
+        .map(([category, total]) => ({
+          name: category,
+          population: Math.max(0, (total / totalExpenses) * 100),
+          color: '#' + ((Math.random() * 0xffffff) << 0).toString(16).padStart(6, '0'),
+          legendFontColor: '#7F7F7F',
+          legendFontSize: 15,
+        }));
+  
       setPieData(pieChartData);
     } catch (error) {
-      console.error('Erro ao carregar dados do gráfico de despesas:', error);
       Alert.alert('Erro', 'Não foi possível carregar os dados para o gráfico.');
     }
   };
@@ -84,6 +84,7 @@ export default function Home() {
 
   // Função para fechar o menu
   const closeMenu = () => {
+    
     Animated.timing(menuAnimation, {
       toValue: -menuWidth,
       duration: 300,
@@ -96,7 +97,7 @@ export default function Home() {
     try {
       // Remover o token de autenticação
       await AsyncStorage.removeItem('authToken');
-      
+
       // Exibir uma mensagem no console para confirmação
       console.log("Usuário deslogado com sucesso");
 
@@ -123,11 +124,11 @@ export default function Home() {
         [
           {
             text: 'OK',
-            onPress: () => logout(), 
+            onPress: () => logout(),
           },
         ]
       );
-    }, 30000000); 
+    }, 30000000);
 
     setLogoutTimer(timer); // Salva o temporizador no estado
   };
@@ -144,7 +145,7 @@ export default function Home() {
   }, []); // Executa apenas uma vez ao montar o componente
 
   return (
-    <View style={{ flex: 1 }} onTouchStart={resetLogoutTimer}> 
+    <View style={{ flex: 1 }} onTouchStart={resetLogoutTimer}>
       <View style={styles.headerGradient}>
         <TouchableOpacity onPress={openMenu}>
           <Feather name="menu" size={24} color="#fff" style={styles.menuIcon} />
@@ -204,6 +205,7 @@ export default function Home() {
     </View>
   );
 }
+
 
 const chartConfig = {
   backgroundColor: '#fff',
