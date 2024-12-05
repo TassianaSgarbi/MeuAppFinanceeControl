@@ -6,7 +6,6 @@ import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { BarChart, PieChart } from 'react-native-chart-kit';
 
-
 const screenWidth = Dimensions.get('window').width;
 const menuWidth = screenWidth * 0.5; // Largura do menu é metade da tela
 
@@ -18,9 +17,7 @@ export default function Home() {
 
   const [despesas, setDespesas] = useState([]);
   const [categorias, setCategorias] = useState([]);
-  const predefinedColors = ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F6'];
 
-  // Função para buscar despesas no backend
   const fetchDespesas = async () => {
     try {
       const response = await axios.get('http://192.168.0.23:3333/expenses');
@@ -31,7 +28,6 @@ export default function Home() {
     }
   };
 
-  // Função para buscar categorias no backend
   const fetchCategorias = async () => {
     try {
       const response = await axios.get('http://192.168.0.23:3333/categories');
@@ -42,18 +38,10 @@ export default function Home() {
     }
   };
 
-  // Função para encontrar o nome da categoria pelo ID
-  const getCategoriaNome = (categoryId) => {
-    const categoria = categorias.find(cat => cat.id === categoryId);
-    return categoria ? categoria.name : 'Categoria não encontrada';
-  };
-
-  // Carregar despesas e categorias ao montar o componente
   useEffect(() => {
     fetchDespesas();
     fetchCategorias();
 
-    // Recarregar as despesas a cada 5 segundos
     const interval = setInterval(() => {
       fetchDespesas();
     }, 5000); // Atualizar a cada 5 segundos
@@ -61,7 +49,6 @@ export default function Home() {
     return () => clearInterval(interval); // Limpar o intervalo quando o componente for desmontado
   }, []);
 
-  // Função para abrir o menu
   const openMenu = () => {
     setMenuVisible(true);
     Animated.timing(menuAnimation, {
@@ -71,24 +58,18 @@ export default function Home() {
     }).start();
   };
 
-  // Função para fechar o menu
   const closeMenu = () => {
     Animated.timing(menuAnimation, {
       toValue: -menuWidth,
       duration: 300,
       useNativeDriver: false,
-    }).start(() => setMenuVisible(false));
+    }).start(() => setMenuVisible(false));  // Fechar o menu após animação
   };
-   // Função para deslogar o usuário
+
   const logout = async () => {
     try {
-      // Remover o token de autenticação
       await AsyncStorage.removeItem('authToken');
-
-      // Exibir uma mensagem no console para confirmação
       console.log("Usuário deslogado com sucesso");
-
-      // Navegar para a tela de login
       navigation.navigate('Login');
     } catch (error) {
       console.error("Erro ao deslogar:", error);
@@ -96,31 +77,35 @@ export default function Home() {
     }
   };
 
-    // Função para reiniciar o temporizador
-    const resetLogoutTimer = () => {
-      // Limpar o temporizador anterior, se houver
-      if (logoutTimer) {
-        clearTimeout(logoutTimer);
-      }
-  
-      // Iniciar um novo temporizador
-      const timer = setTimeout(() => {
-        Alert.alert(
-          'Sessão expirada',
-          'Você ficou inativo por muito tempo. Sua sessão será encerrada.',
-          [
-            {
-              text: 'OK',
-              onPress: () => logout(),
-            },
-          ]
-        );
-      }, 30000000);
-  
-      setLogoutTimer(timer); // Salva o temporizador no estado
-    };
+  // Função para reiniciar o temporizador
+  const resetLogoutTimer = () => {
+    // Limpar o temporizador anterior, se houver
+    if (logoutTimer) {
+      clearTimeout(logoutTimer);
+    }
 
-    // Preparando dados para o gráfico
+    // Iniciar um novo temporizador
+    const timer = setTimeout(() => {
+      Alert.alert(
+        'Sessão expirada',
+        'Você ficou inativo por muito tempo. Sua sessão será encerrada.',
+        [
+          {
+            text: 'OK',
+            onPress: () => logout(),
+          },
+        ]
+      );
+    }, 1800000);
+
+    setLogoutTimer(timer); // Salva o temporizador no estado
+  };
+
+  const getCategoriaNome = (categoryId) => {
+    const categoria = categorias.find(cat => cat.id === categoryId);
+    return categoria ? categoria.name : 'Categoria não encontrada';
+  };
+
   const getChartData = () => {
     const categoryExpenses = categorias.map((categoria) => {
       const total = despesas
@@ -136,14 +121,14 @@ export default function Home() {
   };
 
   const getPieData = () => {
-    return categorias.map((categoria, index) => {
+    return categorias.map((categoria) => {
       const total = despesas
         .filter((despesa) => despesa.categoryId === categoria.id)
         .reduce((acc, curr) => acc + curr.amount, 0);
       return {
         name: categoria.name,
         amount: total,
-        color: predefinedColors[index % predefinedColors.length], // Usa uma cor fixa do array
+        color: `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`,
         legendFontColor: '#000',
         legendFontSize: 12,
       };
@@ -152,17 +137,6 @@ export default function Home() {
 
   const chartData = getChartData();
   const pieData = getPieData();
-
-  const chartConfig = {
-    backgroundGradientFrom: "#ffffff",
-    backgroundGradientTo: "#ffffff",
-    color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-    style: {
-      paddingLeft: 20, // Ajuste para evitar corte nos rótulos
-      paddingRight: 20,
-    },
-  };
 
   return (
     <View style={{ flex: 1 }} onTouchStart={resetLogoutTimer}>
@@ -174,7 +148,7 @@ export default function Home() {
 
       <Modal visible={menuVisible} transparent animationType="none">
         <TouchableOpacity style={styles.modalOverlay} onPress={closeMenu}>
-          <Animated.View style={[styles.menuContainer, { transform: [{ translateX: menuAnimation }] }]} >
+          <Animated.View style={[styles.menuContainer, { transform: [{ translateX: menuAnimation }] }]}>
             <TouchableOpacity style={styles.menuItem} onPress={() => { closeMenu(); navigation.navigate('CadastroCategoria'); }}>
               <Text style={styles.menuItemText}>Cadastrar Categoria</Text>
             </TouchableOpacity>
@@ -203,73 +177,79 @@ export default function Home() {
         </TouchableOpacity>
       </Modal>
 
-      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={true}>
-  {/* Gráfico de Barras */}
-  <View style={styles.chartContainer}>
-    <Text style={styles.chartTitle}>Despesas por Categoria em R$</Text>
-    <BarChart
-      data={{
-        labels: chartData.labels,
-        datasets: [
-          {
-            data: chartData.data,
-          },
-        ],
-      }}
-      width={screenWidth - 40} // Largura do gráfico
-      height={260} // Aumenta a altura para dar espaço aos rótulos
-      chartConfig={{
-        backgroundGradientFrom: "#ffffff",
-        backgroundGradientTo: "#ffffff",
-        color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
-        labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-        style: {
-          paddingLeft: 20,
-          paddingRight: 20,
-        },
-        decimalPlaces: 2, // Ajuste de precisão
-      }}
-      verticalLabelRotation={0} // Rotação dos rótulos
-      style={{ marginBottom: 20 }} // Espaçamento adicional
-    />
-  </View>
+      {/* Conteúdo da tela */}
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.chartContainer}>
+          <Text style={styles.chartTitle}>Despesas por Categoria em R$</Text>
+          <BarChart
+            data={{
+              labels: chartData.labels,
+              datasets: [{ data: chartData.data }],
+            }}
+            width={screenWidth - 40}
+            height={260}
+            chartConfig={{
+              backgroundGradientFrom: "#ffffff",
+              backgroundGradientTo: "#ffffff",
+              color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+              labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              style: { paddingLeft: 20, paddingRight: 20 },
+            }}
+            verticalLabelRotation={0}
+            style={{ marginBottom: 20 }}
+          />
+        </View>
 
-  {/* Gráfico de Pizza */}
-  <View style={styles.chartContainer}>
-    <Text style={styles.chartTitle}>Distribuição de Gastos em %</Text>
-    <PieChart
-      data={pieData}
-      width={screenWidth - 40}
-      height={220}
-      chartConfig={chartConfig}
-      accessor="amount"
-      backgroundColor="transparent"
-      paddingLeft="15"
-    />
-  </View>
-
-        {/* Renderização da Tabela */}
-        <View style={styles.table}>
+        <View style={styles.chartContainer}>
+          <Text style={styles.chartTitle}>Distribuição de Gastos em %</Text>
+          <PieChart
+            data={pieData}
+            width={screenWidth - 40}
+            height={220}
+            chartConfig={{
+              backgroundGradientFrom: "#ffffff",
+              backgroundGradientTo: "#ffffff",
+              color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+              labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+            }}
+            accessor="amount"
+            backgroundColor="transparent"
+            paddingLeft="15"
+          />
+        </View>
+          {/* Renderização da Tabela */}
+          <View style={styles.table}>
           <View style={styles.tableHeader}>
-            <Text style={styles.headerCell}>Categoria</Text>
-            <Text style={styles.headerCell}>Descrição</Text>
-            <Text style={styles.headerCell}>Valor</Text>
-            <Text style={styles.headerCell}>Vencimento</Text>
+            <Text style={styles.headerCell}>Mês</Text>
+            <Text style={styles.headerCell}>Total Despesa</Text>
           </View>
-          {despesas.map((item) => (
-            <View key={item.id} style={styles.tableRow}>
-              <Text style={styles.cell}>{getCategoriaNome(item.categoryId)}</Text>
-              <Text style={styles.cell}>{item.description}</Text>
-              <Text style={styles.cell}>R$ {item.amount.toFixed(2)}</Text>
-              <Text style={styles.cell}>
-                {(() => {
-                  const [day, month, year] = item.due_date.split('/'); // Divide o formato dd/MM/yyyy
-                  const formattedDate = new Date(`${year}-${month}-${day}`); // Converte para o formato yyyy-MM-dd
-                  return formattedDate.toLocaleDateString('pt-BR'); // Formata para dd/MM/yyyy
-                })()}
-              </Text>
-            </View>
-          ))}
+
+          {/* Lista de meses de 01/2024 a 12/2024 */}
+          {Array.from({ length: 12 }, (_, index) => {
+            const month = String(index + 1).padStart(2, '0'); // Garante que o mês tenha 2 dígitos
+            const year = '2024';
+            const monthYear = `${month}/${year}`;
+
+            // Filtra as despesas que correspondem a esse mês/ano
+            const monthExpenses = despesas.filter((item) => {
+              const [day, itemMonth, itemYear] = item.due_date.split('/');
+              return itemMonth === month && itemYear === year;
+            });
+
+            // Calcula o total de despesas para esse mês
+            const totalAmount = monthExpenses.reduce((sum, item) => sum + item.amount, 0);
+
+            return (
+              <View key={monthYear}>
+                <View style={styles.tableRow}>
+                  <Text style={styles.cell}>{monthYear}</Text>
+                  <Text style={[styles.cell, styles.totalText]}>
+                    R$ {totalAmount.toFixed(2)}
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
         </View>
       </ScrollView>
     </View>
@@ -345,4 +325,47 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
   },
+  table: {
+    width: '100%',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#007AFF',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    justifyContent: 'space-between',
+  },
+  headerCell: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+    width: '50%',
+    textAlign: 'center',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f1f1',
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    alignItems: 'center',
+  },
+  cell: {
+    fontSize: 14,
+    textAlign: 'center',
+    width: '50%',
+    color: '#333',
+  },
+  totalText: {
+    fontSize: 16,
+    color: '#333',
+  },
+
 });
