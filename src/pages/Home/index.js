@@ -4,7 +4,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { BarChart } from 'react-native-chart-kit';
+import { BarChart, PieChart } from 'react-native-chart-kit';
+
 
 const screenWidth = Dimensions.get('window').width;
 const menuWidth = screenWidth * 0.5; // Largura do menu é metade da tela
@@ -12,10 +13,12 @@ const menuWidth = screenWidth * 0.5; // Largura do menu é metade da tela
 export default function Home() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuAnimation] = useState(new Animated.Value(-menuWidth)); // Animação de deslize
+  const [logoutTimer, setLogoutTimer] = useState(null); // Estado para o temporizador
   const navigation = useNavigation();
 
   const [despesas, setDespesas] = useState([]);
   const [categorias, setCategorias] = useState([]);
+  const predefinedColors = ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F6'];
 
   // Função para buscar despesas no backend
   const fetchDespesas = async () => {
@@ -132,22 +135,37 @@ export default function Home() {
     return { labels, data };
   };
 
+  const getPieData = () => {
+    return categorias.map((categoria, index) => {
+      const total = despesas
+        .filter((despesa) => despesa.categoryId === categoria.id)
+        .reduce((acc, curr) => acc + curr.amount, 0);
+      return {
+        name: categoria.name,
+        amount: total,
+        color: predefinedColors[index % predefinedColors.length], // Usa uma cor fixa do array
+        legendFontColor: '#000',
+        legendFontSize: 12,
+      };
+    });
+  };
+
   const chartData = getChartData();
+  const pieData = getPieData();
 
   const chartConfig = {
-    backgroundColor: '#fff',
-    backgroundGradientFrom: '#fff',
-    backgroundGradientTo: '#fff',
-    decimalPlaces: 2,
-    color: (opacity = 1) => `rgba(0, 123, 255, ${opacity})`,
+    backgroundGradientFrom: "#ffffff",
+    backgroundGradientTo: "#ffffff",
+    color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
     labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
     style: {
-      borderRadius: 16,
+      paddingLeft: 20, // Ajuste para evitar corte nos rótulos
+      paddingRight: 20,
     },
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1 }} onTouchStart={resetLogoutTimer}>
       <View style={styles.headerGradient}>
         <TouchableOpacity onPress={openMenu}>
           <Feather name="menu" size={24} color="#fff" style={styles.menuIcon} />
@@ -186,24 +204,49 @@ export default function Home() {
       </Modal>
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={true}>
-        {/* Gráfico */}
-        <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>Despesas por Categoria</Text>
-          <BarChart
-            data={{
-              labels: chartData.labels,
-              datasets: [
-                {
-                  data: chartData.data,
-                },
-              ],
-            }}
-            width={screenWidth - 40} // Largura do gráfico
-            height={220}
-            chartConfig={chartConfig}
-            verticalLabelRotation={30}
-          />
-        </View>
+  {/* Gráfico de Barras */}
+  <View style={styles.chartContainer}>
+    <Text style={styles.chartTitle}>Despesas por Categoria em R$</Text>
+    <BarChart
+      data={{
+        labels: chartData.labels,
+        datasets: [
+          {
+            data: chartData.data,
+          },
+        ],
+      }}
+      width={screenWidth - 40} // Largura do gráfico
+      height={260} // Aumenta a altura para dar espaço aos rótulos
+      chartConfig={{
+        backgroundGradientFrom: "#ffffff",
+        backgroundGradientTo: "#ffffff",
+        color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+        labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+        style: {
+          paddingLeft: 20,
+          paddingRight: 20,
+        },
+        decimalPlaces: 2, // Ajuste de precisão
+      }}
+      verticalLabelRotation={0} // Rotação dos rótulos
+      style={{ marginBottom: 20 }} // Espaçamento adicional
+    />
+  </View>
+
+  {/* Gráfico de Pizza */}
+  <View style={styles.chartContainer}>
+    <Text style={styles.chartTitle}>Distribuição de Gastos em %</Text>
+    <PieChart
+      data={pieData}
+      width={screenWidth - 40}
+      height={220}
+      chartConfig={chartConfig}
+      accessor="amount"
+      backgroundColor="transparent"
+      paddingLeft="15"
+    />
+  </View>
 
         {/* Renderização da Tabela */}
         <View style={styles.table}>
@@ -237,6 +280,17 @@ const styles = StyleSheet.create({
   scrollContainer: {
     paddingVertical: 20,
     backgroundColor: '#fff',
+  },
+  chartContainer: {
+    marginBottom: 50,
+    marginVertical: 50,
+    paddingHorizontal: 20,
+  },
+  chartTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
   },
   headerGradient: {
     flexDirection: 'row',
@@ -279,7 +333,7 @@ const styles = StyleSheet.create({
   },
   cell: { flex: 1, textAlign: 'center' },
   chartContainer: { padding: 10 },
-  chartTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
+  chartTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, textAlign: 'center' },
   closeButton: {
     marginTop: 20,
     paddingVertical: 15,
