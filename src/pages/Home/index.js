@@ -3,8 +3,8 @@ import { View, Text, TouchableOpacity, Modal, Animated, Dimensions, ScrollView, 
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
-import { LineChart, BarChart, PieChart } from 'react-native-chart-kit';
 import { useNavigation } from '@react-navigation/native';
+import { BarChart } from 'react-native-chart-kit';
 
 const screenWidth = Dimensions.get('window').width;
 const menuWidth = screenWidth * 0.5; // Largura do menu é metade da tela
@@ -12,65 +12,51 @@ const menuWidth = screenWidth * 0.5; // Largura do menu é metade da tela
 export default function Home() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuAnimation] = useState(new Animated.Value(-menuWidth)); // Animação de deslize
-  const [logoutTimer, setLogoutTimer] = useState(null); // Estado para o temporizador
-  const [pieData, setPieData] = useState([]); // Estado para os dados do gráfico de pizza
   const navigation = useNavigation();
 
-  const barData = {
-    labels: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio'],
-    datasets: [
-      {
-        data: [20, 45, 28, 80, 99],
-      },
-    ],
-  };
+  const [despesas, setDespesas] = useState([]);
+  const [categorias, setCategorias] = useState([]);
 
-  const lineData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
-    datasets: [
-      {
-        data: [20, 35, 50, 40, 60],
-        strokeWidth: 2,
-      },
-    ],
-  };
-
-  // Função para buscar e agregar as despesas por categoria
-  const fetchPieDataFromExpenses = async () => {
+  // Função para buscar despesas no backend
+  const fetchDespesas = async () => {
     try {
       const response = await axios.get('http://192.168.0.23:3333/expenses');
-  
-      const aggregatedData = response.data.reduce((acc, expense) => {
-        const category = expense.category_name || 'Outros';
-        if (!acc[category]) {
-          acc[category] = 0;
-        }
-        acc[category] += expense.amount;
-        return acc;
-      }, {});
-  
-      const totalExpenses = Object.values(aggregatedData).reduce((sum, amount) => sum + amount, 0);
-  
-      if (totalExpenses === 0) {
-        setPieData([]);
-        return;
-      }
-  
-      const pieChartData = Object.entries(aggregatedData)
-        .filter(([category, total]) => total > 0)
-        .map(([category, total]) => ({
-          name: category,
-          population: Math.max(0, (total / totalExpenses) * 100),
-          color: '#' + ((Math.random() * 0xffffff) << 0).toString(16).padStart(6, '0'),
-          legendFontColor: '#7F7F7F',
-          legendFontSize: 15,
-        }));
-  
-      setPieData(pieChartData);
+      setDespesas(response.data);
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível carregar os dados para o gráfico.');
+      console.error('Erro ao buscar despesas:', error);
+      Alert.alert('Erro', 'Não foi possível carregar as despesas.');
     }
   };
+
+  // Função para buscar categorias no backend
+  const fetchCategorias = async () => {
+    try {
+      const response = await axios.get('http://192.168.0.23:3333/categories');
+      setCategorias(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar categorias:', error);
+      Alert.alert('Erro', 'Não foi possível carregar as categorias.');
+    }
+  };
+
+  // Função para encontrar o nome da categoria pelo ID
+  const getCategoriaNome = (categoryId) => {
+    const categoria = categorias.find(cat => cat.id === categoryId);
+    return categoria ? categoria.name : 'Categoria não encontrada';
+  };
+
+  // Carregar despesas e categorias ao montar o componente
+  useEffect(() => {
+    fetchDespesas();
+    fetchCategorias();
+
+    // Recarregar as despesas a cada 5 segundos
+    const interval = setInterval(() => {
+      fetchDespesas();
+    }, 5000); // Atualizar a cada 5 segundos
+
+    return () => clearInterval(interval); // Limpar o intervalo quando o componente for desmontado
+  }, []);
 
   // Função para abrir o menu
   const openMenu = () => {
@@ -84,15 +70,13 @@ export default function Home() {
 
   // Função para fechar o menu
   const closeMenu = () => {
-    
     Animated.timing(menuAnimation, {
       toValue: -menuWidth,
       duration: 300,
       useNativeDriver: false,
     }).start(() => setMenuVisible(false));
   };
-
-  // Função para deslogar o usuário
+   // Função para deslogar o usuário
   const logout = async () => {
     try {
       // Remover o token de autenticação
@@ -109,43 +93,61 @@ export default function Home() {
     }
   };
 
-  // Função para reiniciar o temporizador
-  const resetLogoutTimer = () => {
-    // Limpar o temporizador anterior, se houver
-    if (logoutTimer) {
-      clearTimeout(logoutTimer);
-    }
-
-    // Iniciar um novo temporizador
-    const timer = setTimeout(() => {
-      Alert.alert(
-        'Sessão expirada',
-        'Você ficou inativo por muito tempo. Sua sessão será encerrada.',
-        [
-          {
-            text: 'OK',
-            onPress: () => logout(),
-          },
-        ]
-      );
-    }, 30000000);
-
-    setLogoutTimer(timer); // Salva o temporizador no estado
-  };
-
-  useEffect(() => {
-    fetchPieDataFromExpenses(); // Chama a função ao montar o componente
-
-    // Limpar o temporizador quando o componente for desmontado
-    return () => {
+    // Função para reiniciar o temporizador
+    const resetLogoutTimer = () => {
+      // Limpar o temporizador anterior, se houver
       if (logoutTimer) {
         clearTimeout(logoutTimer);
       }
+  
+      // Iniciar um novo temporizador
+      const timer = setTimeout(() => {
+        Alert.alert(
+          'Sessão expirada',
+          'Você ficou inativo por muito tempo. Sua sessão será encerrada.',
+          [
+            {
+              text: 'OK',
+              onPress: () => logout(),
+            },
+          ]
+        );
+      }, 30000000);
+  
+      setLogoutTimer(timer); // Salva o temporizador no estado
     };
-  }, []); // Executa apenas uma vez ao montar o componente
+
+    // Preparando dados para o gráfico
+  const getChartData = () => {
+    const categoryExpenses = categorias.map((categoria) => {
+      const total = despesas
+        .filter((despesa) => despesa.categoryId === categoria.id)
+        .reduce((acc, curr) => acc + curr.amount, 0);
+      return { category: categoria.name, total };
+    });
+
+    const labels = categoryExpenses.map((item) => item.category);
+    const data = categoryExpenses.map((item) => item.total);
+
+    return { labels, data };
+  };
+
+  const chartData = getChartData();
+
+  const chartConfig = {
+    backgroundColor: '#fff',
+    backgroundGradientFrom: '#fff',
+    backgroundGradientTo: '#fff',
+    decimalPlaces: 2,
+    color: (opacity = 1) => `rgba(0, 123, 255, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+    style: {
+      borderRadius: 16,
+    },
+  };
 
   return (
-    <View style={{ flex: 1 }} onTouchStart={resetLogoutTimer}>
+    <View style={{ flex: 1 }}>
       <View style={styles.headerGradient}>
         <TouchableOpacity onPress={openMenu}>
           <Feather name="menu" size={24} color="#fff" style={styles.menuIcon} />
@@ -184,56 +186,57 @@ export default function Home() {
       </Modal>
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={true}>
+        {/* Gráfico */}
         <View style={styles.chartContainer}>
-          {/* Gráfico de Barras */}
-          <BarChart data={barData} width={screenWidth - 40} height={220} fromZero={true} chartConfig={chartConfig} style={styles.chart} />
-          {/* Gráfico de Linha */}
-          <LineChart data={lineData} width={screenWidth - 40} height={220} chartConfig={chartConfig} style={styles.chart} />
-          {/* Gráfico de Pizza */}
-          <PieChart
-            data={pieData}
-            width={screenWidth - 40}
+          <Text style={styles.chartTitle}>Despesas por Categoria</Text>
+          <BarChart
+            data={{
+              labels: chartData.labels,
+              datasets: [
+                {
+                  data: chartData.data,
+                },
+              ],
+            }}
+            width={screenWidth - 40} // Largura do gráfico
             height={220}
             chartConfig={chartConfig}
-            accessor="population"
-            backgroundColor="transparent"
-            paddingLeft="15"
-            style={styles.chart}
+            verticalLabelRotation={30}
           />
+        </View>
+
+        {/* Renderização da Tabela */}
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={styles.headerCell}>Categoria</Text>
+            <Text style={styles.headerCell}>Descrição</Text>
+            <Text style={styles.headerCell}>Valor</Text>
+            <Text style={styles.headerCell}>Vencimento</Text>
+          </View>
+          {despesas.map((item) => (
+            <View key={item.id} style={styles.tableRow}>
+              <Text style={styles.cell}>{getCategoriaNome(item.categoryId)}</Text>
+              <Text style={styles.cell}>{item.description}</Text>
+              <Text style={styles.cell}>R$ {item.amount.toFixed(2)}</Text>
+              <Text style={styles.cell}>
+                {(() => {
+                  const [day, month, year] = item.due_date.split('/'); // Divide o formato dd/MM/yyyy
+                  const formattedDate = new Date(`${year}-${month}-${day}`); // Converte para o formato yyyy-MM-dd
+                  return formattedDate.toLocaleDateString('pt-BR'); // Formata para dd/MM/yyyy
+                })()}
+              </Text>
+            </View>
+          ))}
         </View>
       </ScrollView>
     </View>
   );
 }
 
-
-const chartConfig = {
-  backgroundColor: '#fff',
-  backgroundGradientFrom: '#fff',
-  backgroundGradientTo: '#fff',
-  color: (opacity = 1) => `rgba(34, 128, 76, ${opacity})`,
-  labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-  style: {
-    borderRadius: 16,
-  },
-  propsForDots: {
-    r: '6',
-    strokeWidth: '2',
-    stroke: '#ffa726',
-  },
-};
-
 const styles = StyleSheet.create({
   scrollContainer: {
     paddingVertical: 20,
     backgroundColor: '#fff',
-  },
-  chartContainer: {
-    alignItems: 'center',
-  },
-  chart: {
-    marginVertical: 8,
-    borderRadius: 16,
   },
   headerGradient: {
     flexDirection: 'row',
@@ -243,9 +246,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 15,
   },
-  menuIcon: {
-    paddingHorizontal: 15,
-  },
+  menuIcon: { paddingHorizontal: 15 },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -259,14 +260,26 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: 'center',
   },
-  menuItem: {
-    paddingVertical: 15,
+  menuItem: { paddingVertical: 15 },
+  menuItemText: { fontSize: 18, color: '#333', textAlign: 'center' },
+  table: { width: '100%', margin: 10 },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderColor: '#ccc',
   },
-  menuItemText: {
-    fontSize: 18,
-    color: '#333',
-    textAlign: 'center',
+  headerCell: { flex: 1, fontWeight: 'bold', textAlign: 'center' },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderColor: '#f0f0f0',
+    paddingVertical: 10,
   },
+  cell: { flex: 1, textAlign: 'center' },
+  chartContainer: { padding: 10 },
+  chartTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
   closeButton: {
     marginTop: 20,
     paddingVertical: 15,
