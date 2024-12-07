@@ -44,6 +44,7 @@ export default function Home() {
 
     const interval = setInterval(() => {
       fetchDespesas();
+      fetchCategorias();
     }, 5000); // Atualizar a cada 5 segundos
 
     return () => clearInterval(interval); // Limpar o intervalo quando o componente for desmontado
